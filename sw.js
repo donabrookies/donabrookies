@@ -1,35 +1,26 @@
-// Service Worker para Dona Brookies PWA
-const CACHE_NAME = 'dona-brookies-v2.1.0';
+// sw.js - Service Worker atualizado para notificações push
+const CACHE_NAME = 'dona-brookies-v1.2';
 const urlsToCache = [
   '/',
   '/index.html',
-  '/manifest.json',
-  '/icons/icon-192x192.png',
-  '/icons/icon-512x512.png'
+  '/imagem_192x192.png',
+  '/imagem_512x512.png'
 ];
 
 // Instalação do Service Worker
 self.addEventListener('install', event => {
-  console.log('Service Worker instalando...');
+  console.log('Service Worker instalado');
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
-        console.log('Cache aberto');
         return cache.addAll(urlsToCache);
-      })
-      .then(() => {
-        console.log('Todos os recursos cacheados com sucesso');
-        return self.skipWaiting();
-      })
-      .catch(error => {
-        console.error('Falha ao cachear recursos:', error);
       })
   );
 });
 
 // Ativação do Service Worker
 self.addEventListener('activate', event => {
-  console.log('Service Worker ativando...');
+  console.log('Service Worker ativado');
   event.waitUntil(
     caches.keys().then(cacheNames => {
       return Promise.all(
@@ -40,64 +31,90 @@ self.addEventListener('activate', event => {
           }
         })
       );
-    }).then(() => {
-      console.log('Service Worker ativado');
-      return self.clients.claim();
     })
   );
 });
 
-// Interceptação de requisições
+// Interceptar requisições
 self.addEventListener('fetch', event => {
-  // Evitar cache de requisições para a API
-  if (event.request.url.includes('/api/') || 
-      event.request.url.includes('supabase.co') ||
-      event.request.url.includes('vercel.app')) {
-    return;
-  }
-
   event.respondWith(
     caches.match(event.request)
       .then(response => {
-        // Retorna o recurso do cache se encontrado
-        if (response) {
-          return response;
-        }
-
-        // Clona a requisição porque ela é um stream e só pode ser consumida uma vez
-        const fetchRequest = event.request.clone();
-
-        return fetch(fetchRequest).then(response => {
-          // Verifica se recebemos uma resposta válida
-          if (!response || response.status !== 200 || response.type !== 'basic') {
-            return response;
-          }
-
-          // Clona a resposta porque ela é um stream e só pode ser consumida uma vez
-          const responseToCache = response.clone();
-
-          caches.open(CACHE_NAME)
-            .then(cache => {
-              cache.put(event.request, responseToCache);
-            });
-
-          return response;
-        }).catch(error => {
-          console.log('Fetch falhou; retornando página offline:', error);
-          // Se a fetch falhar e estivermos tentando carregar a página principal,
-          // retorna a página principal do cache
-          if (event.request.mode === 'navigate') {
-            return caches.match('/');
-          }
-        });
+        // Retorna do cache se encontrado, senão faz a requisição
+        return response || fetch(event.request);
       }
     )
   );
 });
 
-// Mensagens do Service Worker
-self.addEventListener('message', event => {
-  if (event.data && event.data.type === 'SKIP_WAITING') {
-    self.skipWaiting();
+// ===== NOTIFICAÇÕES PUSH =====
+
+// Manipular notificações push recebidas
+self.addEventListener('push', event => {
+  console.log('Notificação push recebida:', event);
+  
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch (error) {
+    console.error('Erro ao processar dados da notificação:', error);
+    data = {
+      title: 'Dona Brookies',
+      body: 'Nova mensagem da Dona Brookies!',
+      icon: '/icons/icon-192x192.png'
+    };
   }
+
+  const options = {
+    body: data.body || 'Nova mensagem da Dona Brookies!',
+    icon: data.icon || '/icons/icon-192x192.png',
+    badge: '/icons/icon-192x192.png',
+    vibrate: [100, 50, 100],
+    data: {
+      url: data.url || '/'
+    },
+    actions: [
+      {
+        action: 'open',
+        title: 'Abrir App'
+      },
+      {
+        action: 'close',
+        title: 'Fechar'
+      }
+    ]
+  };
+
+  event.waitUntil(
+    self.registration.showNotification(data.title || 'Dona Brookies', options)
+  );
+});
+
+// Manipular clique nas notificações
+self.addEventListener('notificationclick', event => {
+  console.log('Notificação clicada:', event);
+  
+  event.notification.close();
+
+  if (event.action === 'open' || event.action === '') {
+    event.waitUntil(
+      clients.matchAll({ type: 'window' }).then(windowClients => {
+        // Verificar se já existe uma janela/tab aberta
+        for (let client of windowClients) {
+          if (client.url.includes(self.location.origin) && 'focus' in client) {
+            return client.focus();
+          }
+        }
+        // Se não existir, abrir nova janela
+        if (clients.openWindow) {
+          return clients.openWindow(event.notification.data.url || '/');
+        }
+      })
+    );
+  }
+});
+
+// Manipular fechamento de notificações
+self.addEventListener('notificationclose', event => {
+  console.log('Notificação fechada:', event);
 });
