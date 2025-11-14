@@ -8,8 +8,9 @@ const STATIC_FILES = [
     '/',
     '/index.html',
     '/manifest.json',
-    '/icons/icon-192x192.png',
-    '/icons/icon-512x512.png',
+    '/imagem_72x72.png',
+    '/imagem_192x192.png',
+    '/imagem_512x512.png',
     'https://cdn.tailwindcss.com',
     'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css',
     'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap',
@@ -114,15 +115,15 @@ self.addEventListener('push', (event) => {
         data = {
             title: 'Dona Brookies',
             body: 'Nova mensagem da Dona Brookies!',
-            icon: '/icons/icon-192x192.png'
+            icon: '/imagem_192x192.png'
         };
     }
 
     const options = {
         body: data.body || 'Nova notificação da Dona Brookies',
-        icon: data.icon || '/icons/icon-192x192.png',
-        badge: data.badge || '/icons/icon-192x192.png',
-        image: data.image || '/icons/icon-192x192.png',
+        icon: data.icon || '/imagem_192x192.png',
+        badge: data.badge || '/imagem_192x192.png',
+        image: data.image || '/imagem_192x192.png',
         data: data.data || { url: '/' },
         actions: data.actions || [
             {
