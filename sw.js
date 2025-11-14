@@ -1,120 +1,189 @@
-// sw.js - Service Worker atualizado para notificações push
-const CACHE_NAME = 'dona-brookies-v1.2';
-const urlsToCache = [
-  '/',
-  '/index.html',
-  '/imagem_192x192.png',
-  '/imagem_512x512.png'
+// Service Worker para Dona Brookies PWA
+const CACHE_NAME = 'dona-brookies-v2.0.0';
+const STATIC_CACHE = 'static-cache-v2';
+const DYNAMIC_CACHE = 'dynamic-cache-v2';
+
+// Arquivos para cache estático
+const STATIC_FILES = [
+    '/',
+    '/index.html',
+    '/manifest.json',
+    '/icons/icon-192x192.png',
+    '/icons/icon-512x512.png',
+    'https://cdn.tailwindcss.com',
+    'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css',
+    'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap',
+    'https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js'
 ];
 
 // Instalação do Service Worker
-self.addEventListener('install', event => {
-  console.log('Service Worker instalado');
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => {
-        return cache.addAll(urlsToCache);
-      })
-  );
+self.addEventListener('install', (event) => {
+    console.log('🚀 Service Worker instalando...');
+    
+    event.waitUntil(
+        caches.open(STATIC_CACHE)
+            .then((cache) => {
+                console.log('📦 Cache estático sendo preenchido...');
+                return cache.addAll(STATIC_FILES);
+            })
+            .then(() => {
+                console.log('✅ Service Worker instalado com sucesso!');
+                return self.skipWaiting();
+            })
+            .catch((error) => {
+                console.error('❌ Erro na instalação do Service Worker:', error);
+            })
+    );
 });
 
 // Ativação do Service Worker
-self.addEventListener('activate', event => {
-  console.log('Service Worker ativado');
-  event.waitUntil(
-    caches.keys().then(cacheNames => {
-      return Promise.all(
-        cacheNames.map(cacheName => {
-          if (cacheName !== CACHE_NAME) {
-            console.log('Deletando cache antigo:', cacheName);
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    })
-  );
+self.addEventListener('activate', (event) => {
+    console.log('🔄 Service Worker ativando...');
+    
+    event.waitUntil(
+        caches.keys()
+            .then((cacheNames) => {
+                return Promise.all(
+                    cacheNames.map((cacheName) => {
+                        if (cacheName !== STATIC_CACHE && cacheName !== DYNAMIC_CACHE) {
+                            console.log('🗑️ Removendo cache antigo:', cacheName);
+                            return caches.delete(cacheName);
+                        }
+                    })
+                );
+            })
+            .then(() => {
+                console.log('✅ Service Worker ativado com sucesso!');
+                return self.clients.claim();
+            })
+    );
 });
 
 // Interceptar requisições
-self.addEventListener('fetch', event => {
-  event.respondWith(
-    caches.match(event.request)
-      .then(response => {
-        // Retorna do cache se encontrado, senão faz a requisição
-        return response || fetch(event.request);
-      }
-    )
-  );
-});
+self.addEventListener('fetch', (event) => {
+    // Não cachear requisições para a API
+    if (event.request.url.includes('/api/') || event.request.url.includes('vercel.app')) {
+        return;
+    }
 
-// ===== NOTIFICAÇÕES PUSH =====
+    event.respondWith(
+        caches.match(event.request)
+            .then((response) => {
+                if (response) {
+                    return response;
+                }
 
-// Manipular notificações push recebidas
-self.addEventListener('push', event => {
-  console.log('Notificação push recebida:', event);
-  
-  let data = {};
-  try {
-    data = event.data ? event.data.json() : {};
-  } catch (error) {
-    console.error('Erro ao processar dados da notificação:', error);
-    data = {
-      title: 'Dona Brookies',
-      body: 'Nova mensagem da Dona Brookies!',
-      icon: '/icons/icon-192x192.png'
-    };
-  }
+                return fetch(event.request)
+                    .then((fetchResponse) => {
+                        // Só cachear se for uma resposta válida
+                        if (!fetchResponse || fetchResponse.status !== 200 || fetchResponse.type !== 'basic') {
+                            return fetchResponse;
+                        }
 
-  const options = {
-    body: data.body || 'Nova mensagem da Dona Brookies!',
-    icon: data.icon || '/icons/icon-192x192.png',
-    badge: '/icons/icon-192x192.png',
-    vibrate: [100, 50, 100],
-    data: {
-      url: data.url || '/'
-    },
-    actions: [
-      {
-        action: 'open',
-        title: 'Abrir App'
-      },
-      {
-        action: 'close',
-        title: 'Fechar'
-      }
-    ]
-  };
+                        const responseToCache = fetchResponse.clone();
 
-  event.waitUntil(
-    self.registration.showNotification(data.title || 'Dona Brookies', options)
-  );
-});
+                        caches.open(DYNAMIC_CACHE)
+                            .then((cache) => {
+                                cache.put(event.request, responseToCache);
+                            });
 
-// Manipular clique nas notificações
-self.addEventListener('notificationclick', event => {
-  console.log('Notificação clicada:', event);
-  
-  event.notification.close();
-
-  if (event.action === 'open' || event.action === '') {
-    event.waitUntil(
-      clients.matchAll({ type: 'window' }).then(windowClients => {
-        // Verificar se já existe uma janela/tab aberta
-        for (let client of windowClients) {
-          if (client.url.includes(self.location.origin) && 'focus' in client) {
-            return client.focus();
-          }
-        }
-        // Se não existir, abrir nova janela
-        if (clients.openWindow) {
-          return clients.openWindow(event.notification.data.url || '/');
-        }
-      })
+                        return fetchResponse;
+                    })
+                    .catch(() => {
+                        // Fallback para página offline se disponível
+                        if (event.request.destination === 'document') {
+                            return caches.match('/');
+                        }
+                    });
+            })
     );
-  }
 });
 
-// Manipular fechamento de notificações
-self.addEventListener('notificationclose', event => {
-  console.log('Notificação fechada:', event);
+// ===== SISTEMA DE NOTIFICAÇÕES PUSH =====
+
+// Escutar mensagens push
+self.addEventListener('push', (event) => {
+    console.log('📨 Push message received', event);
+    
+    let data = {};
+    
+    try {
+        data = event.data ? event.data.json() : {};
+    } catch (error) {
+        console.error('❌ Erro ao processar dados push:', error);
+        data = {
+            title: 'Dona Brookies',
+            body: 'Nova mensagem da Dona Brookies!',
+            icon: '/icons/icon-192x192.png'
+        };
+    }
+
+    const options = {
+        body: data.body || 'Nova notificação da Dona Brookies',
+        icon: data.icon || '/icons/icon-192x192.png',
+        badge: data.badge || '/icons/icon-192x192.png',
+        image: data.image || '/icons/icon-192x192.png',
+        data: data.data || { url: '/' },
+        actions: data.actions || [
+            {
+                action: 'open',
+                title: 'Abrir App'
+            },
+            {
+                action: 'close', 
+                title: 'Fechar'
+            }
+        ],
+        requireInteraction: true,
+        vibrate: [200, 100, 200],
+        tag: data.tag || 'dona-brookies-notification'
+    };
+
+    event.waitUntil(
+        self.registration.showNotification(data.title || 'Dona Brookies', options)
+    );
 });
+
+// Escutar cliques em notificações
+self.addEventListener('notificationclick', (event) => {
+    console.log('🔔 Notification click received', event);
+    
+    event.notification.close();
+
+    const urlToOpen = event.notification.data?.url || '/';
+
+    event.waitUntil(
+        clients.matchAll({
+            type: 'window',
+            includeUncontrolled: true
+        }).then((windowClients) => {
+            // Verificar se já existe uma janela/tab aberta
+            for (let client of windowClients) {
+                if (client.url.includes(self.location.origin) && 'focus' in client) {
+                    return client.focus();
+                }
+            }
+
+            // Se não existe, abrir nova janela
+            if (clients.openWindow) {
+                return clients.openWindow(urlToOpen);
+            }
+        })
+    );
+});
+
+// Escutar ações de notificação
+self.addEventListener('notificationclose', (event) => {
+    console.log('❌ Notification closed', event);
+});
+
+// Escutar mensagens do cliente
+self.addEventListener('message', (event) => {
+    console.log('📩 Message received from client:', event.data);
+    
+    if (event.data && event.data.type === 'SKIP_WAITING') {
+        self.skipWaiting();
+    }
+});
+
+console.log('🔔 Service Worker carregado com sistema de notificações!');

@@ -1057,6 +1057,77 @@
                 font-size: 16px !important; /* Prevenir zoom no iOS */
             }
         }
+
+        /* ===== ESTILOS PARA NOTIFICAÇÕES PUSH ===== */
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #ef4444;
+            color: white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .notification-item {
+            border-left: 4px solid var(--urbanz-primary);
+            background: #f8fafc;
+        }
+
+        .notification-stats-card {
+            background: linear-gradient(135deg, var(--urbanz-primary) 0%, var(--urbanz-dark) 100%);
+            color: white;
+        }
+
+        .notification-toggle {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+
+        .notification-toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .notification-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .notification-slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        .notification-toggle input:checked + .notification-slider {
+            background-color: var(--urbanz-primary);
+        }
+
+        .notification-toggle input:checked + .notification-slider:before {
+            transform: translateX(26px);
+        }
     </style>
 </head>
 <body>
@@ -1393,8 +1464,10 @@
                 <button class="nav-tab px-4 py-3 font-medium" data-tab="ordering">
                     <i class="fas fa-sort mr-2"></i>Ordenação
                 </button>
+                <!-- NOVA ABA: Notificações -->
                 <button class="nav-tab px-4 py-3 font-medium" data-tab="notifications">
                     <i class="fas fa-bell mr-2"></i>Notificações
+                    <span id="notification-tab-badge" class="notification-badge hidden">0</span>
                 </button>
             </div>
 
@@ -1438,15 +1511,16 @@
                             </div>
                         </div>
                     </div>
-                    
-                    <div class="dashboard-card bg-white p-6 rounded-xl shadow">
+
+                    <!-- NOVO CARD: Estatísticas de Notificações -->
+                    <div class="dashboard-card notification-stats-card p-6 rounded-xl shadow">
                         <div class="flex items-center justify-between">
                             <div>
-                                <p class="text-sm text-gray-500">Notificações Enviadas</p>
-                                <p class="text-2xl font-bold" id="notifications-count">0</p>
+                                <p class="text-sm text-white opacity-90">Usuários Notificados</p>
+                                <p class="text-2xl font-bold text-white" id="notification-stats">0</p>
                             </div>
-                            <div class="bg-blue-100 p-3 rounded-full">
-                                <i class="fas fa-bell text-blue-600 text-xl"></i>
+                            <div class="p-3 rounded-full bg-white bg-opacity-20">
+                                <i class="fas fa-bell text-xl text-white"></i>
                             </div>
                         </div>
                     </div>
@@ -1542,84 +1616,121 @@
                 </div>
             </div>
 
-            <!-- Notifications Tab -->
+            <!-- NOVA ABA: Notificações -->
             <div id="tab-notifications" class="tab-content hidden">
                 <div class="flex justify-between items-center mb-6 flex-wrap gap-3">
-                    <h2 class="text-2xl font-bold text-gray-800">Enviar Notificações Push</h2>
+                    <h2 class="text-2xl font-bold text-gray-800">Sistema de Notificações</h2>
+                    <div class="flex gap-3">
+                        <button id="test-notification-btn" class="bg-green-600 text-white px-4 py-2 rounded-full shadow flex items-center gap-2">
+                            <i class="fas fa-bell"></i>
+                            <span>Testar Notificação</span>
+                        </button>
+                        <button id="send-notification-btn" class="urbanz-admin-btn hover:bg-blue-700 px-4 py-2 rounded-full shadow flex items-center gap-2">
+                            <i class="fas fa-paper-plane"></i>
+                            <span>Enviar Notificação</span>
+                        </button>
+                    </div>
                 </div>
-                
-                <div class="bg-white rounded-xl shadow p-6 mb-6">
-                    <h3 class="font-semibold text-lg mb-4 text-gray-800">Enviar Notificação para Todos os Usuários</h3>
+
+                <!-- Estatísticas Rápidas -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="bg-white p-6 rounded-xl shadow">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-500">Usuários Inscritos</p>
+                                <p class="text-2xl font-bold" id="subscribed-users">0</p>
+                            </div>
+                            <div class="p-3 rounded-full bg-blue-100">
+                                <i class="fas fa-users text-blue-600 text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
                     
-                    <form id="notification-form" class="space-y-4">
+                    <div class="bg-white p-6 rounded-xl shadow">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-500">Notificações Enviadas</p>
+                                <p class="text-2xl font-bold" id="total-notifications">0</p>
+                            </div>
+                            <div class="p-3 rounded-full bg-green-100">
+                                <i class="fas fa-paper-plane text-green-600 text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white p-6 rounded-xl shadow">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-500">Taxa de Entrega</p>
+                                <p class="text-2xl font-bold" id="delivery-rate">0%</p>
+                            </div>
+                            <div class="p-3 rounded-full bg-purple-100">
+                                <i class="fas fa-chart-line text-purple-600 text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Formulário de Envio de Notificação -->
+                <div class="bg-white rounded-xl shadow overflow-hidden mb-8">
+                    <div class="p-6 border-b">
+                        <h3 class="text-lg font-semibold text-gray-800">Enviar Notificação para Todos os Usuários</h3>
+                    </div>
+                    
+                    <form id="notification-form" class="p-6 space-y-4">
                         <div>
                             <label class="block text-sm font-medium mb-1 text-gray-700">Título da Notificação *</label>
-                            <input type="text" id="notification-title" required 
-                                   class="focus-ring w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2"
-                                   placeholder="Ex: Promoção Especial!" maxlength="50">
+                            <input type="text" id="notification-title" required class="focus-ring w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2" placeholder="Ex: Promoção Especial!">
                         </div>
                         
                         <div>
                             <label class="block text-sm font-medium mb-1 text-gray-700">Mensagem *</label>
-                            <textarea id="notification-message" required rows="4"
-                                      class="focus-ring w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2"
-                                      placeholder="Ex: Confira nossos novos sabores com 20% de desconto!" maxlength="200"></textarea>
-                            <p class="text-xs text-gray-500 mt-1">Máximo 200 caracteres</p>
+                            <textarea id="notification-message" required rows="3" class="focus-ring w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2" placeholder="Ex: Aproveite nossos brownies com 20% de desconto!"></textarea>
                         </div>
                         
-                        <div>
-                            <label class="block text-sm font-medium mb-1 text-gray-700">URL (opcional)</label>
-                            <input type="url" id="notification-url"
-                                   class="focus-ring w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2"
-                                   placeholder="Ex: https://donabrookies.com/promocao">
-                            <p class="text-xs text-gray-500 mt-1">Link que será aberto ao clicar na notificação</p>
-                        </div>
-                        
-                        <div class="bg-blue-50 p-4 rounded-lg">
-                            <div class="flex items-start">
-                                <i class="fas fa-info-circle text-blue-500 mt-1 mr-3"></i>
-                                <div>
-                                    <p class="text-sm text-blue-800 font-medium">Informações sobre notificações</p>
-                                    <p class="text-xs text-blue-600 mt-1">
-                                        A notificação será enviada para todos os usuários que instalaram o app PWA 
-                                        e aceitaram receber notificações. Elas aparecerão mesmo quando o app estiver fechado.
-                                    </p>
-                                </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-1 text-gray-700">URL (Opcional)</label>
+                                <input type="url" id="notification-url" class="focus-ring w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2" placeholder="https://...">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium mb-1 text-gray-700">Ícone (Opcional)</label>
+                                <input type="url" id="notification-icon" class="focus-ring w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2" placeholder="https://...">
                             </div>
                         </div>
-                        
-                        <div class="flex gap-3 pt-4">
-                            <button type="button" id="test-notification" class="flex-1 border border-gray-300 text-gray-700 py-2 rounded-lg">
-                                <i class="fas fa-bell mr-2"></i>Testar Notificação
-                            </button>
-                            <button type="submit" class="flex-1 btn-primary py-2 rounded-lg">
-                                <i class="fas fa-paper-plane mr-2"></i>Enviar para Todos
+
+                        <div class="flex items-center gap-3 p-4 bg-yellow-50 rounded-lg">
+                            <div class="flex-1">
+                                <p class="text-sm text-yellow-800">
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    Esta notificação será enviada para <span id="notification-recipients" class="font-bold">0</span> usuários inscritos.
+                                </p>
+                            </div>
+                            <button type="submit" class="urbanz-admin-btn hover:bg-blue-700 px-6 py-2 rounded-full shadow flex items-center gap-2">
+                                <i class="fas fa-paper-plane"></i>
+                                <span>Enviar Notificação</span>
                             </button>
                         </div>
                     </form>
                 </div>
-                
-                <div class="bg-white rounded-xl shadow p-6">
-                    <h3 class="font-semibold text-lg mb-4 text-gray-800">Estatísticas de Notificações</h3>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                        <div class="bg-green-50 p-4 rounded-lg text-center">
-                            <div class="text-2xl font-bold text-green-700" id="total-subscribers">0</div>
-                            <div class="text-sm text-green-600">Usuários Inscritos</div>
-                        </div>
-                        <div class="bg-blue-50 p-4 rounded-lg text-center">
-                            <div class="text-2xl font-bold text-blue-700" id="notifications-sent">0</div>
-                            <div class="text-sm text-blue-600">Notificações Enviadas</div>
-                        </div>
-                        <div class="bg-purple-50 p-4 rounded-lg text-center">
-                            <div class="text-2xl font-bold text-purple-700" id="last-sent">-</div>
-                            <div class="text-sm text-purple-600">Último Envio</div>
-                        </div>
+
+                <!-- Histórico de Notificações -->
+                <div class="bg-white rounded-xl shadow overflow-hidden">
+                    <div class="p-6 border-b">
+                        <h3 class="text-lg font-semibold text-gray-800">Histórico de Notificações</h3>
                     </div>
                     
-                    <button id="view-subscribers" class="urbanz-admin-btn px-4 py-2 rounded-lg">
-                        <i class="fas fa-users mr-2"></i>Ver Lista de Inscritos
-                    </button>
+                    <div class="p-4">
+                        <div id="notifications-history-list" class="space-y-4">
+                            <!-- Histórico será inserido aqui -->
+                        </div>
+                        
+                        <div id="empty-notifications-history" class="text-center py-8 text-gray-500">
+                            <i class="fas fa-bell-slash text-4xl mb-3 opacity-30"></i>
+                            <p>Nenhuma notificação enviada ainda.</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </main>
@@ -1857,6 +1968,59 @@
         </div>
     </div>
 
+    <!-- NOVO MODAL: Configurações de Notificação -->
+    <div id="notification-settings-modal" class="fixed inset-0 flex items-center justify-center z-50 hidden">
+        <div class="modal-overlay absolute inset-0"></div>
+        
+        <div class="modal-content bg-white rounded-xl w-full max-w-md mx-4 z-10 shadow-2xl">
+            <div class="p-6 border-b">
+                <h3 class="text-xl font-semibold text-gray-800">Configurações de Notificação</h3>
+            </div>
+            
+            <div class="p-6 space-y-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="font-medium text-gray-800">Notificações Push</p>
+                        <p class="text-sm text-gray-500">Receba notificações sobre promoções e novidades</p>
+                    </div>
+                    <label class="notification-toggle">
+                        <input type="checkbox" id="push-notification-toggle">
+                        <span class="notification-slider"></span>
+                    </label>
+                </div>
+                
+                <div class="p-4 bg-blue-50 rounded-lg">
+                    <p class="text-sm text-blue-800">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        As notificações funcionam melhor quando o app está instalado no seu dispositivo.
+                    </p>
+                </div>
+                
+                <div id="notification-status" class="text-center py-4">
+                    <div id="notification-supported" class="hidden">
+                        <i class="fas fa-check-circle text-green-500 text-2xl mb-2"></i>
+                        <p class="text-sm text-gray-600">Notificações estão ativas!</p>
+                    </div>
+                    <div id="notification-unsupported" class="hidden">
+                        <i class="fas fa-times-circle text-red-500 text-2xl mb-2"></i>
+                        <p class="text-sm text-gray-600">Seu navegador não suporta notificações.</p>
+                    </div>
+                    <div id="notification-denied" class="hidden">
+                        <i class="fas fa-bell-slash text-yellow-500 text-2xl mb-2"></i>
+                        <p class="text-sm text-gray-600">Permissão para notificações foi negada.</p>
+                        <button id="enable-notifications" class="mt-2 text-sm text-blue-600 hover:text-blue-800">
+                            Ativar notificações nas configurações
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="flex gap-3 pt-4 border-t">
+                    <button type="button" id="close-notification-settings" class="flex-1 border border-gray-300 text-gray-700 py-2 rounded-lg">Fechar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <script>
         // ===== CONFIGURAÇÕES =====
@@ -1865,6 +2029,11 @@
         // ATUALIZE ESTA URL PARA SEU BACKEND NO RENDER
         const API_BASE_URL = "https://backend-vercel-tawny.vercel.app";
         const DELIVERY_FEE = 3.00; // Taxa de entrega de R$ 3,00
+
+        // ===== SISTEMA DE NOTIFICAÇÕES PUSH =====
+        let pushSubscription = null;
+        let isPushEnabled = false;
+        let publicVapidKey = '';
 
         // ===== SISTEMA DE AUTENTICAÇÃO =====
         function simpleEncrypt(text) {
@@ -1991,10 +2160,6 @@
         let adminCurrentTab = 'dashboard';
         let saborCounter = 0;
 
-        // ===== SISTEMA DE NOTIFICAÇÕES PUSH =====
-        let pushSubscription = null;
-        let isSubscribed = false;
-
         // ===== ELEMENTOS DO DOM =====
         const elements = {
             // Seções principais
@@ -2092,16 +2257,21 @@
             orderingProductsList: document.getElementById('ordering-products-list'),
             
             // Notificações
+            notificationTabBadge: document.getElementById('notification-tab-badge'),
+            testNotificationBtn: document.getElementById('test-notification-btn'),
+            sendNotificationBtn: document.getElementById('send-notification-btn'),
             notificationForm: document.getElementById('notification-form'),
             notificationTitle: document.getElementById('notification-title'),
             notificationMessage: document.getElementById('notification-message'),
             notificationUrl: document.getElementById('notification-url'),
-            testNotification: document.getElementById('test-notification'),
-            totalSubscribers: document.getElementById('total-subscribers'),
-            notificationsSent: document.getElementById('notifications-sent'),
-            lastSent: document.getElementById('last-sent'),
-            viewSubscribers: document.getElementById('view-subscribers'),
-            notificationsCount: document.getElementById('notifications-count'),
+            notificationIcon: document.getElementById('notification-icon'),
+            notificationRecipients: document.getElementById('notification-recipients'),
+            notificationsHistoryList: document.getElementById('notifications-history-list'),
+            emptyNotificationsHistory: document.getElementById('empty-notifications-history'),
+            subscribedUsers: document.getElementById('subscribed-users'),
+            totalNotifications: document.getElementById('total-notifications'),
+            deliveryRate: document.getElementById('delivery-rate'),
+            notificationStats: document.getElementById('notification-stats'),
             
             // Modais
             addProductModal: document.getElementById('add-product-modal'),
@@ -2120,7 +2290,17 @@
             cancelCategory: document.getElementById('cancel-category'),
             categoryName: document.getElementById('category-name'),
             categoryId: document.getElementById('category-id'),
-            categoryDescription: document.getElementById('category-description')
+            categoryDescription: document.getElementById('category-description'),
+            
+            // Modal de Notificações
+            notificationSettingsModal: document.getElementById('notification-settings-modal'),
+            pushNotificationToggle: document.getElementById('push-notification-toggle'),
+            closeNotificationSettings: document.getElementById('close-notification-settings'),
+            notificationStatus: document.getElementById('notification-status'),
+            notificationSupported: document.getElementById('notification-supported'),
+            notificationUnsupported: document.getElementById('notification-unsupported'),
+            notificationDenied: document.getElementById('notification-denied'),
+            enableNotifications: document.getElementById('enable-notifications')
         };
 
         // ===== FUNÇÕES DE NOTIFICAÇÃO =====
@@ -2176,6 +2356,284 @@
                 elements.welcomeScreen.style.display = 'flex';
                 elements.welcomeScreen.classList.add('active');
                 elements.welcomeScreen.classList.remove('hidden');
+            }
+        }
+
+        // ===== SISTEMA DE NOTIFICAÇÕES PUSH =====
+        async function initializePushNotifications() {
+            try {
+                // Verificar se o Service Worker e Push são suportados
+                if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+                    console.log('❌ Notificações push não suportadas');
+                    updateNotificationUI('unsupported');
+                    return;
+                }
+
+                // Obter chave pública VAPID
+                const response = await fetch(`${API_BASE_URL}/api/notifications/public-key`);
+                const data = await response.json();
+                publicVapidKey = data.publicKey;
+
+                // Registrar Service Worker
+                const registration = await navigator.serviceWorker.register('/sw.js');
+                console.log('✅ Service Worker registrado:', registration);
+
+                // Verificar permissão atual
+                const permission = await Notification.requestPermission();
+                if (permission === 'granted') {
+                    await subscribeToPushNotifications(registration);
+                } else {
+                    console.log('❌ Permissão para notificações negada');
+                    updateNotificationUI('denied');
+                }
+
+            } catch (error) {
+                console.error('❌ Erro ao inicializar notificações:', error);
+                updateNotificationUI('unsupported');
+            }
+        }
+
+        async function subscribeToPushNotifications(registration) {
+            try {
+                // Verificar se já está inscrito
+                let subscription = await registration.pushManager.getSubscription();
+                
+                if (subscription) {
+                    pushSubscription = subscription;
+                    isPushEnabled = true;
+                    await sendSubscriptionToServer(subscription, 'subscribe');
+                    updateNotificationUI('supported');
+                    return;
+                }
+
+                // Fazer nova inscrição
+                subscription = await registration.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: urlBase64ToUint8Array(publicVapidKey)
+                });
+
+                pushSubscription = subscription;
+                isPushEnabled = true;
+                await sendSubscriptionToServer(subscription, 'subscribe');
+                updateNotificationUI('supported');
+                
+                console.log('✅ Inscrito para notificações push');
+
+            } catch (error) {
+                console.error('❌ Erro ao inscrever para notificações:', error);
+                updateNotificationUI('unsupported');
+            }
+        }
+
+        async function unsubscribeFromPushNotifications() {
+            try {
+                if (!pushSubscription) return;
+
+                await pushSubscription.unsubscribe();
+                await sendSubscriptionToServer(pushSubscription, 'unsubscribe');
+                
+                pushSubscription = null;
+                isPushEnabled = false;
+                updateNotificationUI('denied');
+                
+                console.log('✅ Cancelado inscrição de notificações');
+
+            } catch (error) {
+                console.error('❌ Erro ao cancelar inscrição:', error);
+            }
+        }
+
+        async function sendSubscriptionToServer(subscription, type) {
+            try {
+                const deviceInfo = {
+                    userAgent: navigator.userAgent,
+                    platform: navigator.platform,
+                    language: navigator.language,
+                    isStandalone: isStandaloneApp(),
+                    timestamp: new Date().toISOString()
+                };
+
+                if (type === 'subscribe') {
+                    await fetch(`${API_BASE_URL}/api/notifications/subscribe`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            subscription: subscription,
+                            deviceInfo: deviceInfo
+                        })
+                    });
+                } else {
+                    await fetch(`${API_BASE_URL}/api/notifications/unsubscribe`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            subscription: subscription
+                        })
+                    });
+                }
+            } catch (error) {
+                console.error('❌ Erro ao enviar subscription:', error);
+            }
+        }
+
+        function urlBase64ToUint8Array(base64String) {
+            const padding = '='.repeat((4 - base64String.length % 4) % 4);
+            const base64 = (base64String + padding)
+                .replace(/\-/g, '+')
+                .replace(/_/g, '/');
+
+            const rawData = window.atob(base64);
+            const outputArray = new Uint8Array(rawData.length);
+
+            for (let i = 0; i < rawData.length; ++i) {
+                outputArray[i] = rawData.charCodeAt(i);
+            }
+            return outputArray;
+        }
+
+        function updateNotificationUI(status) {
+            // Esconder todos os status primeiro
+            elements.notificationSupported.classList.add('hidden');
+            elements.notificationUnsupported.classList.add('hidden');
+            elements.notificationDenied.classList.add('hidden');
+
+            // Mostrar status atual
+            switch (status) {
+                case 'supported':
+                    elements.notificationSupported.classList.remove('hidden');
+                    elements.pushNotificationToggle.checked = true;
+                    break;
+                case 'unsupported':
+                    elements.notificationUnsupported.classList.remove('hidden');
+                    elements.pushNotificationToggle.disabled = true;
+                    break;
+                case 'denied':
+                    elements.notificationDenied.classList.remove('hidden');
+                    elements.pushNotificationToggle.checked = false;
+                    break;
+            }
+        }
+
+        async function sendNotificationToAll(title, message, icon, url) {
+            try {
+                if (!checkAuth()) {
+                    showToast('Não autorizado. Faça login novamente.', 'error');
+                    return false;
+                }
+
+                const response = await fetch(`${API_BASE_URL}/api/notifications/send`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({
+                        title: title,
+                        message: message,
+                        icon: icon,
+                        url: url
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    showToast(`Notificação enviada para ${data.sent} usuários!`, 'success');
+                    await loadNotificationStats();
+                    await loadNotificationsHistory();
+                    return true;
+                } else {
+                    showToast('Erro ao enviar notificação.', 'error');
+                    return false;
+                }
+            } catch (error) {
+                console.error('❌ Erro ao enviar notificação:', error);
+                showToast('Erro ao enviar notificação.', 'error');
+                return false;
+            }
+        }
+
+        async function loadNotificationStats() {
+            try {
+                if (!checkAuth()) return;
+
+                const response = await fetch(`${API_BASE_URL}/api/notifications/stats`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                const data = await response.json();
+                
+                elements.subscribedUsers.textContent = data.totalSubscriptions || 0;
+                elements.totalNotifications.textContent = data.totalNotifications || 0;
+                elements.deliveryRate.textContent = `${Math.round(data.deliveryRate || 0)}%`;
+                elements.notificationStats.textContent = data.totalSubscriptions || 0;
+                elements.notificationRecipients.textContent = data.totalSubscriptions || 0;
+
+                // Atualizar badge na aba
+                if (data.totalSubscriptions > 0) {
+                    elements.notificationTabBadge.textContent = data.totalSubscriptions;
+                    elements.notificationTabBadge.classList.remove('hidden');
+                } else {
+                    elements.notificationTabBadge.classList.add('hidden');
+                }
+
+            } catch (error) {
+                console.error('❌ Erro ao carregar estatísticas:', error);
+            }
+        }
+
+        async function loadNotificationsHistory() {
+            try {
+                if (!checkAuth()) return;
+
+                const response = await fetch(`${API_BASE_URL}/api/notifications/history`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                const data = await response.json();
+                const history = data.history || [];
+
+                elements.notificationsHistoryList.innerHTML = '';
+                elements.emptyNotificationsHistory.classList.toggle('hidden', history.length > 0);
+
+                history.forEach(notification => {
+                    const notificationEl = document.createElement('div');
+                    notificationEl.className = 'notification-item p-4 rounded-lg';
+                    
+                    const sentDate = new Date(notification.created_at).toLocaleString('pt-BR');
+                    const successRate = notification.total_subscriptions > 0 
+                        ? Math.round((notification.sent_count / notification.total_subscriptions) * 100)
+                        : 0;
+
+                    notificationEl.innerHTML = `
+                        <div class="flex justify-between items-start mb-2">
+                            <div class="flex-1">
+                                <h4 class="font-semibold text-gray-800">${notification.title}</h4>
+                                <p class="text-sm text-gray-600 mt-1">${notification.message}</p>
+                            </div>
+                            <span class="text-xs text-gray-500 whitespace-nowrap ml-2">${sentDate}</span>
+                        </div>
+                        <div class="flex justify-between items-center text-xs text-gray-500">
+                            <span>Enviado para: ${notification.sent_count}/${notification.total_subscriptions} usuários</span>
+                            <span class="${successRate >= 80 ? 'text-green-600' : successRate >= 50 ? 'text-yellow-600' : 'text-red-600'} font-medium">
+                                ${successRate}% de entrega
+                            </span>
+                        </div>
+                    `;
+
+                    elements.notificationsHistoryList.appendChild(notificationEl);
+                });
+
+            } catch (error) {
+                console.error('❌ Erro ao carregar histórico:', error);
             }
         }
 
@@ -2573,218 +3031,6 @@
             return products.length > 0 ? Math.max(...products.map(p => p.id)) + 1 : 1;
         }
 
-        // ===== SISTEMA DE NOTIFICAÇÕES PUSH =====
-        async function initializeNotifications() {
-            if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-                console.log('Notificações push não suportadas');
-                return;
-            }
-            
-            try {
-                // Registrar service worker
-                const registration = await navigator.serviceWorker.register('/sw.js');
-                console.log('Service Worker registrado:', registration);
-                
-                // Verificar se já está inscrito
-                const subscription = await registration.pushManager.getSubscription();
-                
-                if (subscription) {
-                    pushSubscription = subscription;
-                    isSubscribed = true;
-                    console.log('Já inscrito para notificações push');
-                    
-                    // Atualizar subscription no servidor se necessário
-                    await updateSubscriptionOnServer(subscription, 'subscribe');
-                } else {
-                    console.log('Não inscrito para notificações push');
-                }
-                
-                // Solicitar permissão se for app instalado
-                if (isStandaloneApp()) {
-                    await requestNotificationPermission();
-                }
-                
-            } catch (error) {
-                console.error('Erro ao inicializar notificações:', error);
-            }
-        }
-
-        async function requestNotificationPermission() {
-            if (Notification.permission === 'default') {
-                const permission = await Notification.requestPermission();
-                
-                if (permission === 'granted') {
-                    console.log('Permissão para notificações concedida');
-                    await subscribeToPushNotifications();
-                } else {
-                    console.log('Permissão para notificações negada');
-                }
-            } else if (Notification.permission === 'granted' && !isSubscribed) {
-                await subscribeToPushNotifications();
-            }
-        }
-
-        async function subscribeToPushNotifications() {
-            try {
-                const registration = await navigator.serviceWorker.ready;
-                
-                // Usar VAPID key pública
-                const vapidPublicKey = 'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U';
-                
-                const subscription = await registration.pushManager.subscribe({
-                    userVisibleOnly: true,
-                    applicationServerKey: urlBase64ToUint8Array(vapidPublicKey)
-                });
-                
-                pushSubscription = subscription;
-                isSubscribed = true;
-                
-                console.log('Inscrito para notificações push:', subscription);
-                
-                // Enviar subscription para o servidor
-                await updateSubscriptionOnServer(subscription, 'subscribe');
-                
-                showToast('Notificações ativadas com sucesso!', 'success');
-                
-            } catch (error) {
-                console.error('Erro ao inscrever para notificações:', error);
-                
-                if (Notification.permission === 'denied') {
-                    showToast('Permissão para notificações foi negada. Ative manualmente nas configurações do navegador.', 'warning');
-                } else {
-                    showToast('Erro ao ativar notificações. Tente novamente.', 'error');
-                }
-            }
-        }
-
-        function urlBase64ToUint8Array(base64String) {
-            const padding = '='.repeat((4 - base64String.length % 4) % 4);
-            const base64 = (base64String + padding)
-                .replace(/\-/g, '+')
-                .replace(/_/g, '/');
-            
-            const rawData = window.atob(base64);
-            const outputArray = new Uint8Array(rawData.length);
-            
-            for (let i = 0; i < rawData.length; ++i) {
-                outputArray[i] = rawData.charCodeAt(i);
-            }
-            return outputArray;
-        }
-
-        async function updateSubscriptionOnServer(subscription, action) {
-            try {
-                const response = await fetch(`${API_BASE_URL}/api/push/subscription`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        subscription: subscription,
-                        action: action
-                    })
-                });
-                
-                if (!response.ok) {
-                    throw new Error('Erro ao atualizar subscription no servidor');
-                }
-                
-                console.log('Subscription atualizada no servidor com sucesso');
-                return true;
-            } catch (error) {
-                console.error('Erro ao atualizar subscription:', error);
-                return false;
-            }
-        }
-
-        async function sendNotificationToAll(title, message, url = '') {
-            if (!checkAuth()) {
-                showToast('Não autorizado. Faça login novamente.', 'error');
-                return false;
-            }
-            
-            try {
-                const response = await fetch(`${API_BASE_URL}/api/push/send`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${authToken}`
-                    },
-                    body: JSON.stringify({
-                        title: title,
-                        message: message,
-                        url: url
-                    })
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    showToast(`Notificação enviada para ${data.sent} usuários!`, 'success');
-                    updateNotificationStats();
-                    return true;
-                } else {
-                    showToast('Erro ao enviar notificação: ' + data.error, 'error');
-                    return false;
-                }
-            } catch (error) {
-                console.error('Erro ao enviar notificação:', error);
-                showToast('Erro ao enviar notificação. Tente novamente.', 'error');
-                return false;
-            }
-        }
-
-        async function updateNotificationStats() {
-            try {
-                const response = await fetch(`${API_BASE_URL}/api/push/stats`);
-                const data = await response.json();
-                
-                if (data.success) {
-                    elements.totalSubscribers.textContent = data.totalSubscribers || 0;
-                    elements.notificationsSent.textContent = data.notificationsSent || 0;
-                    elements.notificationsCount.textContent = data.notificationsSent || 0;
-                    
-                    if (data.lastSent) {
-                        const lastSent = new Date(data.lastSent).toLocaleString('pt-BR');
-                        elements.lastSent.textContent = lastSent;
-                    }
-                }
-            } catch (error) {
-                console.error('Erro ao buscar estatísticas:', error);
-            }
-        }
-
-        async function testNotification() {
-            if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-                showToast('Notificações push não são suportadas neste navegador', 'warning');
-                return;
-            }
-            
-            if (Notification.permission !== 'granted') {
-                showToast('Permissão para notificações não concedida', 'warning');
-                return;
-            }
-            
-            const title = elements.notificationTitle.value || 'Teste de Notificação';
-            const message = elements.notificationMessage.value || 'Esta é uma notificação de teste da Dona Brookies!';
-            
-            // Mostrar notificação local
-            if ('serviceWorker' in navigator) {
-                const registration = await navigator.serviceWorker.ready;
-                registration.showNotification(title, {
-                    body: message,
-                    icon: '/icons/icon-192x192.png',
-                    badge: '/icons/icon-192x192.png',
-                    vibrate: [100, 50, 100],
-                    data: {
-                        url: elements.notificationUrl.value || '/'
-                    }
-                });
-                
-                showToast('Notificação de teste enviada!', 'success');
-            }
-        }
-
         // ===== FUNÇÕES DE VISUALIZAÇÃO =====
         function showStoreView() {
             elements.loginSection.classList.add('hidden');
@@ -2825,7 +3071,8 @@
             renderCategories();
             updateCategorySelects();
             renderOrderingProducts();
-            updateNotificationStats();
+            loadNotificationStats();
+            loadNotificationsHistory();
         }
 
         function showLoginView() {
@@ -2850,13 +3097,13 @@
             setupRouting();
             setupEventListeners();
             
+            // Inicializar notificações push
+            initializePushNotifications();
+            
             renderCategoryFilters();
             updateCartUI();
             renderCategories();
             updateCategorySelects();
-            
-            // Inicializar sistema de notificações
-            initializeNotifications();
         }
 
         // ===== CONFIGURAÇÃO DE EVENT LISTENERS =====
@@ -2931,10 +3178,12 @@
             // Event listeners para ordenação
             elements.saveOrderingBtn.addEventListener('click', saveProductOrdering);
             
-            // Event listeners para notificações
-            elements.notificationForm.addEventListener('submit', handleNotificationSubmit);
-            elements.testNotification.addEventListener('click', testNotification);
-            elements.viewSubscribers.addEventListener('click', viewSubscribersList);
+            // ===== NOVOS EVENT LISTENERS PARA NOTIFICAÇÕES =====
+            elements.testNotificationBtn?.addEventListener('click', handleTestNotification);
+            elements.notificationForm?.addEventListener('submit', handleNotificationSubmit);
+            elements.pushNotificationToggle?.addEventListener('change', handlePushNotificationToggle);
+            elements.closeNotificationSettings?.addEventListener('click', closeNotificationSettings);
+            elements.enableNotifications?.addEventListener('click', requestNotificationPermission);
         }
 
         // ===== HANDLERS DE AUTENTICAÇÃO =====
@@ -2966,6 +3215,78 @@
         function handleLogout() {
             logout();
             showToast('Você saiu do sistema.', 'success');
+        }
+
+        // ===== NOVOS HANDLERS PARA NOTIFICAÇÕES =====
+        async function handleTestNotification() {
+            const title = 'Teste de Notificação';
+            const message = 'Esta é uma notificação de teste da Dona Brookies!';
+            
+            const success = await sendNotificationToAll(title, message);
+            if (success) {
+                console.log('✅ Notificação de teste enviada');
+            }
+        }
+
+        async function handleNotificationSubmit(e) {
+            e.preventDefault();
+            
+            const title = elements.notificationTitle.value;
+            const message = elements.notificationMessage.value;
+            const url = elements.notificationUrl.value;
+            const icon = elements.notificationIcon.value;
+            
+            if (!title || !message) {
+                showToast('Por favor, preencha o título e a mensagem.', 'warning');
+                return;
+            }
+            
+            // Mostrar loading
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = 'Enviando...';
+            submitBtn.disabled = true;
+            
+            try {
+                const success = await sendNotificationToAll(title, message, icon, url);
+                if (success) {
+                    elements.notificationForm.reset();
+                }
+            } finally {
+                // Restaurar botão
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
+            }
+        }
+
+        async function handlePushNotificationToggle(e) {
+            if (e.target.checked) {
+                await initializePushNotifications();
+            } else {
+                await unsubscribeFromPushNotifications();
+            }
+        }
+
+        function openNotificationSettings() {
+            elements.notificationSettingsModal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeNotificationSettings() {
+            elements.notificationSettingsModal.classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+
+        async function requestNotificationPermission() {
+            try {
+                const permission = await Notification.requestPermission();
+                if (permission === 'granted') {
+                    const registration = await navigator.serviceWorker.ready;
+                    await subscribeToPushNotifications(registration);
+                }
+            } catch (error) {
+                console.error('❌ Erro ao solicitar permissão:', error);
+            }
         }
 
         // ===== FUNÇÕES DE CHECKOUT =====
@@ -3404,7 +3725,7 @@
             if (sortBy === 'price-asc') {
                 filteredProducts.sort((a, b) => a.price - b.price);
             } else if (sortBy === 'price-desc') {
-                filteredProducts.sort((a, b) => b.price - a.price);
+                filteredProducts.sort((a, b) => b.price - b.price);
             } else {
                 // Ordem padrão (display_order)
                 filteredProducts.sort((a, b) => {
@@ -3853,7 +4174,8 @@
             if (tabName === 'ordering') {
                 renderOrderingProducts();
             } else if (tabName === 'notifications') {
-                updateNotificationStats();
+                loadNotificationStats();
+                loadNotificationsHistory();
             }
         }
 
@@ -4580,45 +4902,6 @@
                 console.error('Erro ao excluir categoria:', error);
                 showToast(`Erro ao excluir categoria: ${error.message}`, 'error');
             }
-        }
-
-        // ===== FUNÇÕES DE NOTIFICAÇÕES PUSH =====
-        async function handleNotificationSubmit(e) {
-            e.preventDefault();
-            
-            const title = elements.notificationTitle.value;
-            const message = elements.notificationMessage.value;
-            const url = elements.notificationUrl.value;
-            
-            if (!title || !message) {
-                showToast('Por favor, preencha o título e a mensagem da notificação.', 'warning');
-                return;
-            }
-            
-            // Mostrar loading
-            const submitBtn = e.target.querySelector('button[type="submit"]');
-            const originalText = submitBtn.textContent;
-            submitBtn.textContent = 'Enviando...';
-            submitBtn.disabled = true;
-            
-            try {
-                const success = await sendNotificationToAll(title, message, url);
-                
-                if (success) {
-                    elements.notificationForm.reset();
-                }
-            } catch (error) {
-                console.error('Erro ao enviar notificação:', error);
-                showToast('Erro ao enviar notificação. Tente novamente.', 'error');
-            } finally {
-                // Restaurar botão
-                submitBtn.textContent = originalText;
-                submitBtn.disabled = false;
-            }
-        }
-
-        function viewSubscribersList() {
-            showToast('Funcionalidade em desenvolvimento!', 'info');
         }
 
         // ===== INICIALIZAR APLICAÇÃO =====
