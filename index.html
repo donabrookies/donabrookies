@@ -6,20 +6,20 @@
     <meta name="theme-color" content="#a5784f">
     <meta name="description" content="Dona Brookies - Brownies e cookies feitos com amor e crocância!">
     <title>DonaBrookies</title>
-
+    
     <!-- PWA Manifest -->
-    <link rel="manifest" href="/manifest.json">
-
+    <link rel="manifest" href="manifest.json">
+    
     <!-- Ícones PWA -->
-    <link rel="icon" href="/icons/icon-192x192.png" type="image/png">
-    <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
-
+    <link rel="icon" href="icons/icon-192x192.png" type="image/png">
+    <link rel="apple-touch-icon" href="icons/icon-192x192.png">
+    
     <!-- CSS e Fontes -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-
+        
         :root {
             --urbanz-dark: #a5784f;
             --urbanz-primary: #a5784f;
@@ -28,10 +28,11 @@
             --urbanz-accent: #a5784f;
             --urbanz-secondary: #a5784f;
         }
-
+        
         body {
             font-family: 'Inter', sans-serif;
             background-color: var(--urbanz-cream);
+            /* PREVENIR ZOOM E COMPORTAMENTOS DE TOQUE INDESEJADOS */
             touch-action: pan-x pan-y;
             -webkit-touch-callout: none;
             -webkit-user-select: none;
@@ -41,7 +42,7 @@
             user-select: none;
             -webkit-tap-highlight-color: transparent;
         }
-
+        
         /* Tela de Boas-Vindas - APENAS PARA APP */
         .welcome-screen {
             position: fixed;
@@ -50,26 +51,26 @@
             width: 100%;
             height: 100%;
             background: linear-gradient(135deg, var(--urbanz-primary) 0%, var(--urbanz-dark) 100%);
-            display: none;
+            display: none; /* Inicialmente escondida */
             flex-direction: column;
             align-items: center;
             justify-content: center;
             z-index: 9999;
             transition: opacity 0.5s ease-out;
         }
-
+        
         .welcome-screen.active {
             display: flex;
             opacity: 1;
             visibility: visible;
         }
-
+        
         .welcome-screen.hidden {
             opacity: 0;
             pointer-events: none;
             visibility: hidden;
         }
-
+        
         .welcome-logo {
             width: 120px;
             height: 120px;
@@ -77,7 +78,7 @@
             margin-bottom: 20px;
             animation: pulse 2s infinite;
         }
-
+        
         .welcome-title {
             color: white;
             font-size: 2.5rem;
@@ -85,14 +86,14 @@
             margin-bottom: 10px;
             text-align: center;
         }
-
+        
         .welcome-subtitle {
             color: var(--urbanz-light);
             font-size: 1.2rem;
             text-align: center;
             margin-bottom: 30px;
         }
-
+        
         .loading-spinner {
             width: 40px;
             height: 40px;
@@ -101,18 +102,18 @@
             border-radius: 50%;
             animation: spin 1s linear infinite;
         }
-
+        
         @keyframes pulse {
             0% { transform: scale(1); }
             50% { transform: scale(1.05); }
             100% { transform: scale(1); }
         }
-
+        
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-
+        
         .login-container {
             min-height: 100vh;
             display: flex;
@@ -126,7 +127,7 @@
             bottom: 0;
             z-index: 9999;
         }
-
+        
         .login-card {
             background: white;
             border-radius: 12px;
@@ -135,29 +136,29 @@
             max-width: 400px;
             overflow: hidden;
         }
-
+        
         .login-header {
             background: linear-gradient(135deg, var(--urbanz-primary) 0%, var(--urbanz-dark) 100%);
             color: white;
             padding: 25px;
             text-align: center;
         }
-
+        
         .login-form {
             padding: 25px;
         }
-
+        
         .form-group {
             margin-bottom: 20px;
         }
-
+        
         .form-group label {
             display: block;
             margin-bottom: 8px;
             font-weight: 500;
             color: #374151;
         }
-
+        
         .form-group input {
             width: 100%;
             padding: 12px 15px;
@@ -166,13 +167,13 @@
             font-size: 16px;
             transition: border-color 0.3s;
         }
-
+        
         .form-group input:focus {
             outline: none;
             border-color: var(--urbanz-primary);
             box-shadow: 0 0 0 3px rgba(165, 120, 79, 0.2);
         }
-
+        
         .btn-login {
             width: 100%;
             padding: 12px;
@@ -185,44 +186,44 @@
             cursor: pointer;
             transition: transform 0.2s, box-shadow 0.2s;
         }
-
+        
         .btn-login:hover {
             transform: translateY(-2px);
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         }
-
+        
         .security-notice {
             text-align: center;
             margin-top: 20px;
             font-size: 14px;
             color: #6b7280;
         }
-
+        
         .admin-section {
             display: none;
         }
-
+        
         .product-card, .dashboard-card {
             transition: transform 0.3s, box-shadow 0.3s;
         }
-
+        
         .product-card:hover {
             transform: translateY(-5px);
             box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
         }
-
+        
         .brand-logo {
             height: 40px;
             width: auto;
             margin-right: 12px;
             border-radius: 50%;
         }
-
+        
         .brand-container {
             display: flex;
             align-items: center;
         }
-
+        
         .brand-text {
             color: var(--urbanz-light);
             font-weight: 700;
@@ -231,11 +232,12 @@
         .brand-texto{
             color: var(--urbanz-light)
         }
-
+        
         .brand-subtitle {
             color: var(--urbanz-light);
         }
-
+        
+        /* Otimizações para carregamento rápido das imagens */
         .product-main-image {
             height: 280px;
             width: 100%;
@@ -243,106 +245,106 @@
             background-color: var(--urbanz-cream);
             transition: opacity 0.3s ease;
         }
-
+        
         .image-loading {
             opacity: 0.5;
             background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
             background-size: 200% 100%;
             animation: loading 1.5s infinite;
         }
-
+        
         .image-loaded {
             opacity: 1;
         }
-
+        
         @keyframes loading {
             0% { background-position: 200% 0; }
             100% { background-position: -200% 0; }
         }
-
+        
         .dashboard-card:hover {
             transform: translateY(-3px);
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
         }
-
+        
         .cart-item {
             transition: background-color 0.2s;
         }
-
+        
         .cart-item:hover {
             background-color: var(--urbanz-light);
         }
-
+        
         .sabor-btn, .quantity-btn {
             transition: all 0.2s;
         }
-
+        
         .sabor-btn:hover:not(.out-of-stock) {
             background-color: var(--urbanz-primary);
             color: white;
         }
-
+        
         .quantity-btn:hover {
             transform: scale(1.1);
         }
-
+        
         .quantity-btn.selected {
             border: 3px solid var(--urbanz-primary);
             transform: scale(1.1);
         }
-
+        
         .out-of-stock {
             opacity: 0.5;
             cursor: not-allowed;
         }
-
+        
         .btn-primary {
             background: linear-gradient(to right, var(--urbanz-primary), var(--urbanz-dark));
             color: white;
             transition: all 0.3s;
         }
-
+        
         .btn-primary:hover {
             background: linear-gradient(to right, var(--urbanz-dark), #8a6a04);
             transform: translateY(-2px);
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
-
+        
         .modal-overlay {
             background-color: rgba(0, 0, 0, 0.5);
             animation: fadeIn 0.3s ease-out;
         }
-
+        
         .modal-content {
             animation: slideIn 0.3s ease-out;
             max-height: 90vh;
             overflow-y: auto;
         }
-
+        
         .stock-low {
             color: #ef4444;
             font-weight: 500;
         }
-
+        
         .stock-medium {
             color: #f59e0b;
             font-weight: 500;
         }
-
+        
         .stock-high {
             color: #10b981;
             font-weight: 500;
         }
-
+        
         .nav-tab {
             transition: all 0.2s;
         }
-
+        
         .nav-tab.active {
             border-bottom: 3px solid var(--urbanz-primary);
             color: var(--urbanz-primary);
         }
-
+        
         .category-badge {
             display: inline-block;
             padding: 0.25rem 0.75rem;
@@ -350,17 +352,17 @@
             font-size: 0.75rem;
             font-weight: 500;
         }
-
+        
         .category-camisa {
             background-color: var(--urbanz-light);
             color: var(--urbanz-dark);
         }
-
+        
         .category-short {
             background-color: #f6f0be;
             color: var(--urbanz-dark);
         }
-
+        
         .logout-btn {
             background: #ef4444;
             color: white;
@@ -372,43 +374,44 @@
             align-items: center;
             gap: 5px;
         }
-
+        
         .logout-btn:hover {
             background: #dc2626;
         }
-
+        
         .urbanz-header {
             background: linear-gradient(135deg, var(--urbanz-dark) 0%, var(--urbanz-primary) 100%);
             color: white;
         }
-
+        
         .urbanz-cart-btn {
             background: var(--urbanz-primary);
             color: white;
         }
-
+        
         .urbanz-cart-btn:hover {
             background: var(--urbanz-dark);
         }
-
+        
         .urbanz-filter-btn {
             background: var(--urbanz-primary);
             color: white;
         }
-
+        
         .urbanz-filter-btn:hover {
             background: var(--urbanz-dark);
         }
-
+        
         .urbanz-admin-btn {
             background: var(--urbanz-primary);
             color: white;
         }
-
+        
         .urbanz-admin-btn:hover {
             background: var(--urbanz-dark);
         }
-
+        
+        /* Upload de imagens */
         .image-upload-area {
             border: 2px dashed #d1d5db;
             border-radius: 8px;
@@ -417,35 +420,35 @@
             cursor: pointer;
             transition: border-color 0.2s;
         }
-
+        
         .image-upload-area:hover {
             border-color: var(--urbanz-primary);
         }
-
+        
         .image-upload-area.drag-over {
             border-color: var(--urbanz-primary);
             background-color: var(--urbanz-light);
         }
-
+        
         .image-preview {
             max-width: 100px;
             max-height: 100px;
             object-fit: cover;
             border-radius: 8px;
         }
-
+        
         .sabor-variant {
             border: 1px solid #e5e7eb;
             border-radius: 8px;
             padding: 15px;
             margin-bottom: 15px;
         }
-
+        
         .sabor-variant.selected {
             border-color: var(--urbanz-primary);
             background-color: var(--urbanz-light);
         }
-
+        
         .remove-sabor-btn {
             background: #ef4444;
             color: white;
@@ -455,14 +458,14 @@
             font-size: 12px;
             cursor: pointer;
         }
-
+        
         .sabor-selector {
             display: flex;
             gap: 10px;
             flex-wrap: wrap;
             margin-bottom: 15px;
         }
-
+        
         .sabor-option {
             width: 50px;
             height: 50px;
@@ -471,18 +474,20 @@
             border: 2px solid #e5e7eb;
             transition: all 0.2s;
         }
-
+        
         .sabor-option.selected {
             border-color: var(--urbanz-primary);
             transform: scale(1.1);
         }
-
+        
+        /* Estilo para o nome do sabor selecionado */
         .selected-sabor-name {
             font-weight: 500;
             color: var(--urbanz-primary);
             font-size: 0.875rem;
         }
-
+        
+        /* Estilo para o botão Adicionar ao Carrinho */
         .add-to-cart-btn {
             background-color: #a5784f !important;
             color: white !important;
@@ -492,15 +497,16 @@
             cursor: pointer !important;
             transition: background-color 0.2s !important;
         }
-
+        
         .add-to-cart-btn:hover {
             background-color: #8a6540 !important;
         }
-
+        
+        /* Novos estilos para responsividade */
         .mobile-menu-btn {
             display: none;
         }
-
+        
         .mobile-filter-menu {
             display: none;
             position: fixed;
@@ -513,15 +519,16 @@
             padding: 20px;
             overflow-y: auto;
         }
-
+        
         .mobile-filter-menu.active {
             display: block;
         }
-
+        
         .mobile-cart-btn {
             display: none;
         }
 
+        /* Estilos para notificação */
         .toast-notification {
             position: fixed;
             top: 20px;
@@ -556,6 +563,7 @@
             cursor: pointer;
         }
 
+        /* Estilos para tela do carrinho */
         .cart-section {
             display: none;
             min-height: 100vh;
@@ -581,19 +589,21 @@
         .back-btn:hover {
             background: #4b5563;
         }
-
+        
+        /* Correção para inputs com focus */
         .search-input:focus {
             outline: none;
             border-color: var(--urbanz-primary);
             box-shadow: 0 0 0 3px rgba(165, 120, 79, 0.2);
         }
-
+        
         .focus-ring:focus {
             outline: none;
             border-color: var(--urbanz-primary);
             box-shadow: 0 0 0 3px rgba(165, 120, 79, 0.2);
         }
 
+        /* Estilos para campos de endereço */
         .delivery-fields {
             display: none;
             transition: all 0.3s ease;
@@ -647,6 +657,7 @@
             color: var(--urbanz-primary);
         }
 
+        /* Estilo para endereço da loja */
         .store-address {
             display: none;
             background-color: #f0f9ff;
@@ -675,6 +686,7 @@
             line-height: 1.5;
         }
 
+        /* Estilos para opção de troco */
         .troco-fields {
             display: none;
             transition: all 0.3s ease;
@@ -683,7 +695,8 @@
         .troco-fields.active {
             display: block;
         }
-
+        
+        /* Estilos para dados PIX */
         .pix-info {
             display: none;
             background-color: #f0f9ff;
@@ -711,48 +724,49 @@
             font-size: 14px;
             line-height: 1.5;
         }
-
+        
         @keyframes fadeIn {
             from { opacity: 0; }
             to { opacity: 1; }
         }
-
+        
         @keyframes slideIn {
             from { transform: translateY(-20px); opacity: 0; }
             to { transform: translateY(0); opacity: 1; }
         }
-
+        
+        /* Media queries para responsividade */
         @media (max-width: 1024px) {
             .container {
                 padding-left: 1rem;
                 padding-right: 1rem;
             }
-
+            
             .products-grid {
                 grid-template-columns: repeat(2, 1fr);
             }
         }
-
+        
         @media (max-width: 768px) {
             header .container {
                 flex-direction: column;
                 gap: 1rem;
                 padding: 1rem;
             }
-
+            
             .brand-logo {
                 height: 32px;
             }
-
+            
             .search-input {
                 width: 100%;
                 max-width: 100%;
             }
-
+            
             .desktop-cart-btn {
                 display: none;
             }
-
+            
             .mobile-cart-btn {
                 display: flex;
                 position: fixed;
@@ -766,47 +780,47 @@
                 justify-content: center;
                 box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
             }
-
+            
             .mobile-menu-btn {
                 display: block;
             }
-
+            
             .filter-sidebar {
                 display: none;
             }
-
+            
             .mobile-filter-btn {
                 display: block;
                 margin-bottom: 1rem;
             }
-
+            
             .products-grid {
                 grid-template-columns: 1fr;
             }
-
+            
             .cart-item {
                 grid-template-columns: 1fr;
                 gap: 1rem;
             }
-
+            
             .cart-item > div {
                 text-align: center;
             }
-
+            
             .admin-table {
                 overflow-x: auto;
             }
-
+            
             .admin-table table {
                 min-width: 600px;
             }
-
+            
             .modal-content {
                 margin: 1rem;
                 width: calc(100% - 2rem);
                 max-height: calc(100vh - 2rem);
             }
-
+            
             .dashboard-cards {
                 grid-template-columns: repeat(2, 1fr);
             }
@@ -844,22 +858,26 @@
                 gap: 0.75rem;
             }
 
+            /* ALTERAÇÃO PRINCIPAL: Imagens maiores no mobile */
             .product-main-image {
-                height: 350px !important;
+                height: 350px !important; /* Aumentei a altura no mobile */
                 width: 100% !important;
                 object-fit: contain !important;
             }
-
+            
+            /* Aumentar também as imagens dos sabores no mobile */
             .sabor-option {
-                width: 70px !important;
+                width: 70px !important; /* Aumentei o tamanho dos botões de sabor */
                 height: 70px !important;
             }
-
+            
+            /* Aumentar imagens no carrinho no mobile */
             .cart-item img {
                 width: 80px !important;
                 height: 80px !important;
             }
 
+            /* Correção para botões de ação em mobile */
             .edit-product, .delete-product, .delete-category {
                 min-width: 44px;
                 min-height: 44px;
@@ -872,42 +890,43 @@
                 touch-action: manipulation;
             }
         }
-
+        
         @media (max-width: 640px) {
             .dashboard-cards {
                 grid-template-columns: 1fr;
             }
-
+            
             .nav-tabs {
                 flex-wrap: wrap;
             }
-
+            
             .nav-tab {
                 flex: 1;
                 min-width: 120px;
                 text-align: center;
             }
-
+            
             footer .grid {
                 grid-template-columns: 1fr;
                 gap: 1.5rem;
             }
-
+            
+            /* Ajuste adicional para telas muito pequenas */
             .product-main-image {
                 height: 320px !important;
             }
         }
-
+        
         @media (max-width: 480px) {
             .login-card {
                 margin: 1rem;
                 width: calc(100% - 2rem);
             }
-
+            
             .product-main-image {
-                height: 300px !important;
+                height: 300px !important; /* Ajuste para telas muito pequenas */
             }
-
+            
             .brand-logo {
                 height: 28px;
             }
@@ -922,13 +941,15 @@
                 padding: 12px;
                 font-size: 14px;
             }
-
+            
+            /* Ajuste final para telas muito pequenas */
             .sabor-option {
                 width: 60px !important;
                 height: 60px !important;
             }
         }
 
+        /* Estilos para ordenação de produtos */
         .sortable-ghost {
             opacity: 0.4;
         }
@@ -954,6 +975,7 @@
             background-color: var(--urbanz-light);
         }
 
+        /* Estilos para descrição de sabor */
         .sabor-description-preview {
             font-size: 0.875rem;
             color: #6b7280;
@@ -965,6 +987,7 @@
             -webkit-box-orient: vertical;
         }
 
+        /* CORREÇÃO: Estilo para sabores esgotados */
         .sabor-option.out-of-stock {
             opacity: 0.5;
             cursor: not-allowed;
@@ -983,6 +1006,7 @@
             text-shadow: 1px 1px 2px white;
         }
 
+        /* CORREÇÃO: Feedback visual para botão de adicionar ao carrinho */
         .add-to-cart-btn.click-feedback {
             animation: pulse 0.5s ease-in-out;
         }
@@ -993,19 +1017,24 @@
             100% { transform: scale(1); }
         }
 
+        /* ===== NOVOS ESTILOS PARA PREVENIR ZOOM ===== */
+        
+        /* Prevenir zoom em double tap em iOS Safari */
         * {
             -webkit-text-size-adjust: 100%;
             -moz-text-size-adjust: 100%;
             -ms-text-size-adjust: 100%;
         }
-
+        
+        /* Prevenir seleção de texto */
         body, input, textarea, select, button {
             -webkit-user-select: none;
             -moz-user-select: none;
             -ms-user-select: none;
             user-select: none;
         }
-
+        
+        /* Permitir seleção apenas em campos de entrada */
         input[type="text"],
         input[type="number"],
         input[type="password"],
@@ -1015,18 +1044,21 @@
             -ms-user-select: text;
             user-select: text;
         }
-
+        
+        /* Prevenir ações de toque indesejadas */
         a, button, input, .sabor-option, .quantity-btn, .add-to-cart-btn {
             -webkit-touch-callout: none;
             -webkit-tap-highlight-color: rgba(0,0,0,0);
         }
-
+        
+        /* Prevenir zoom em inputs no iOS */
         @media screen and (max-width: 768px) {
             input, select, textarea {
-                font-size: 16px !important;
+                font-size: 16px !important; /* Prevenir zoom no iOS */
             }
         }
 
+        /* ===== ESTILOS PARA NOTIFICAÇÕES PUSH ===== */
         .notification-badge {
             position: absolute;
             top: -5px;
@@ -1096,87 +1128,6 @@
         .notification-toggle input:checked + .notification-slider:before {
             transform: translateX(26px);
         }
-
-        /* BANNER DE NOTIFICAÇÃO NO TOPO */
-        .notification-banner {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            background: linear-gradient(135deg, var(--urbanz-primary) 0%, var(--urbanz-dark) 100%);
-            color: white;
-            padding: 12px 20px;
-            z-index: 9998;
-            display: none;
-            align-items: center;
-            justify-content: space-between;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-        }
-
-        .notification-banner.show {
-            display: flex;
-        }
-
-        .notification-banner-content {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            flex: 1;
-        }
-
-        .notification-banner-icon {
-            font-size: 24px;
-        }
-
-        .notification-banner-text {
-            flex: 1;
-        }
-
-        .notification-banner-title {
-            font-weight: 600;
-            font-size: 14px;
-            margin-bottom: 2px;
-        }
-
-        .notification-banner-message {
-            font-size: 12px;
-            opacity: 0.9;
-        }
-
-        .notification-banner-actions {
-            display: flex;
-            gap: 8px;
-        }
-
-        .notification-banner-btn {
-            padding: 6px 16px;
-            border-radius: 6px;
-            border: none;
-            cursor: pointer;
-            font-size: 12px;
-            font-weight: 600;
-            transition: all 0.2s;
-        }
-
-        .notification-banner-btn.primary {
-            background: white;
-            color: var(--urbanz-primary);
-        }
-
-        .notification-banner-btn.primary:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        }
-
-        .notification-banner-btn.secondary {
-            background: transparent;
-            color: white;
-            border: 1px solid white;
-        }
-
-        .notification-banner-btn.secondary:hover {
-            background: rgba(255,255,255,0.1);
-        }
     </style>
 </head>
 <body>
@@ -1186,25 +1137,6 @@
         <h1 class="welcome-title">Dona Brookies</h1>
         <p class="welcome-subtitle">Bem-vindo à nossa doceria!</p>
         <div class="loading-spinner"></div>
-    </div>
-
-    <!-- BANNER DE NOTIFICAÇÃO NO TOPO -->
-    <div id="notification-banner" class="notification-banner">
-        <div class="notification-banner-content">
-            <i class="fas fa-bell notification-banner-icon"></i>
-            <div class="notification-banner-text">
-                <div class="notification-banner-title">Ativar Notificações</div>
-                <div class="notification-banner-message">Receba novidades e promoções da Dona Brookies!</div>
-            </div>
-        </div>
-        <div class="notification-banner-actions">
-            <button id="banner-allow-notifications" class="notification-banner-btn primary">
-                <i class="fas fa-check mr-1"></i>Permitir
-            </button>
-            <button id="banner-dismiss-notifications" class="notification-banner-btn secondary">
-                Agora não
-            </button>
-        </div>
     </div>
 
     <!-- Notificação Toast -->
@@ -1236,7 +1168,7 @@
                     <input type="password" id="password" placeholder="Digite sua senha">
                 </div>
                 <button id="login-btn" class="btn-login">Acessar Painel</button>
-
+                
                 <div class="security-notice">
                     <p><i class="fas fa-shield-alt"></i> Área restrita aos administradores</p>
                 </div>
@@ -1280,7 +1212,7 @@
                     </button>
                 </div>
             </div>
-
+            
             <!-- Barra de pesquisa mobile -->
             <div class="container mx-auto px-4 pb-4 md:hidden">
                 <div class="relative">
@@ -1303,7 +1235,7 @@
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-
+            
             <div class="mb-5">
                 <h3 class="text-sm font-medium mb-2 text-gray-700">Categoria</h3>
                 <div class="space-y-2" id="mobile-category-filters">
@@ -1326,7 +1258,7 @@
                     <span id="products-count-mobile">0</span> produtos encontrados
                 </p>
             </div>
-
+            
             <button class="w-full urbanz-filter-btn py-3 rounded-lg mt-6" id="apply-filters">
                 Aplicar Filtros
             </button>
@@ -1337,11 +1269,11 @@
                 <i class="fas fa-filter"></i>
                 <span>Filtros</span>
             </button>
-
+            
             <div class="flex flex-col md:flex-row gap-6">
                 <aside class="filter-sidebar w-full md:w-1/4 bg-white p-6 rounded-xl shadow">
                     <h2 class="font-semibold text-lg mb-4 text-gray-800">Filtros</h2>
-
+                    
                     <div class="mb-5">
                         <h3 class="text-sm font-medium mb-2 text-gray-700">Categoria</h3>
                         <div class="space-y-2" id="desktop-category-filters">
@@ -1390,16 +1322,16 @@
                         </div>
                         <p class="text-gray-600 text-sm" style="color: var(--urbanz-light);">Brownies e cookies feitos com amor e crocância!</p>
                     </div>
-
+                    
                     <div>
                         <h4 class="font-semibold mb-4 " style="color: var(--urbanz-light)"; >Contato </h4>
                         <p class="text-gray-600 text-sm">
                             <i class="fas fa-whatsapp mr-2 text-green-500"></i>
                             <span style="color: var(--urbanz-light);">(84) 99693-3713</span>
                         </p>
-
+                    
                     </div>
-
+                    
                     <div>
     <h4 class="font-semibold mb-4" style="color: var(--urbanz-light);">Redes Sociais</h4>
     <div class="flex gap-4">
@@ -1417,7 +1349,7 @@
 </div>
 
 <div class="border-t mt-8 pt-6 text-center text-sm" style="color: var(--urbanz-light);">
-    © 2025 Dona Brookies
+    © 2025 Dona Brookies 
 </div>
             </div>
         </footer>
@@ -1457,7 +1389,7 @@
                         Continuar Comprando
                     </button>
                 </div>
-
+                
                 <div id="cart-items-page" class="hidden">
                     <div class="border-b pb-4 mb-6 hidden md:block">
                         <div class="grid grid-cols-12 gap-4 text-sm text-gray-500 font-medium">
@@ -1467,17 +1399,17 @@
                             <div class="col-span-2 text-right">Subtotal</div>
                         </div>
                     </div>
-
+                    
                     <div id="cart-items-list-page" class="space-y-4">
                         <!-- Itens do carrinho serão inseridos aqui -->
                     </div>
-
+                    
                     <div class="border-t pt-6 mt-8">
                         <div class="flex justify-between items-center mb-6">
                             <div class="text-2xl font-bold">Total</div>
                             <div class="text-3xl font-bold" style="color: var(--urbanz-primary);" id="cart-total-page">R$ 0,00</div>
                         </div>
-
+                        
                         <div class="flex flex-col sm:flex-row gap-4">
                             <button id="continue-shopping-2" class="flex-1 border border-gray-300 text-gray-700 px-6 py-3 rounded-full font-medium">
                                 <i class="fas fa-store mr-2"></i>
@@ -1532,6 +1464,7 @@
                 <button class="nav-tab px-4 py-3 font-medium" data-tab="ordering">
                     <i class="fas fa-sort mr-2"></i>Ordenação
                 </button>
+                <!-- NOVA ABA: Notificações -->
                 <button class="nav-tab px-4 py-3 font-medium" data-tab="notifications">
                     <i class="fas fa-bell mr-2"></i>Notificações
                     <span id="notification-tab-badge" class="notification-badge hidden">0</span>
@@ -1541,7 +1474,7 @@
             <!-- Dashboard Tab -->
             <div id="tab-dashboard" class="tab-content">
                 <h2 class="text-2xl font-bold mb-6 text-gray-800">Visão Geral</h2>
-
+                
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 dashboard-cards">
                     <div class="dashboard-card bg-white p-6 rounded-xl shadow">
                         <div class="flex items-center justify-between">
@@ -1554,7 +1487,7 @@
                             </div>
                         </div>
                     </div>
-
+                    
                     <div class="dashboard-card bg-white p-6 rounded-xl shadow">
                         <div class="flex items-center justify-between">
                             <div>
@@ -1566,7 +1499,7 @@
                             </div>
                         </div>
                     </div>
-
+                    
                     <div class="dashboard-card bg-white p-6 rounded-xl shadow">
                         <div class="flex items-center justify-between">
                             <div>
@@ -1579,6 +1512,7 @@
                         </div>
                     </div>
 
+                    <!-- NOVO CARD: Estatísticas de Notificações -->
                     <div class="dashboard-card notification-stats-card p-6 rounded-xl shadow">
                         <div class="flex items-center justify-between">
                             <div>
@@ -1591,7 +1525,7 @@
                         </div>
                     </div>
                 </div>
-
+                
                 <div class="bg-white p-6 rounded-xl shadow">
                     <h3 class="font-semibold text-lg mb-4 text-gray-800">Produtos com Baixo Estoque</h3>
                     <div class="space-y-4" id="low-stock-list">
@@ -1609,19 +1543,19 @@
                         <span>Adicionar Produto</span>
                     </button>
                 </div>
-
+                
                 <div class="bg-white rounded-xl shadow overflow-hidden">
                     <div class="p-4 border-b flex justify-between items-center flex-wrap gap-3">
                         <div class="relative w-full md:w-64">
                             <input type="text" id="admin-search" placeholder="Buscar produtos..." class="focus-ring border rounded-full px-4 py-2 text-sm w-full focus:outline-none focus:ring-2">
                             <i class="fas fa-search absolute right-3 top-3 text-gray-400"></i>
                         </div>
-
+                        
                         <select id="admin-category-filter" class="focus-ring border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2">
                             <option value="all">Todas as categorias</option>
                         </select>
                     </div>
-
+                    
                     <div class="overflow-x-auto admin-table">
                         <table class="w-full">
                             <thead class="bg-gray-50">
@@ -1652,7 +1586,7 @@
                         <span>Adicionar Categoria</span>
                     </button>
                 </div>
-
+                
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="categories-list">
                     <!-- Categorias serão inseridas aqui -->
                 </div>
@@ -1667,7 +1601,7 @@
                         <span>Salvar Ordenação</span>
                     </button>
                 </div>
-
+                
                 <div class="bg-white rounded-xl shadow overflow-hidden">
                     <div class="p-4 border-b">
                         <p class="text-sm text-gray-600">
@@ -1675,7 +1609,7 @@
                             Arraste os produtos para reordená-los. A ordem será refletida na loja.
                         </p>
                     </div>
-
+                    
                     <div id="ordering-products-list" class="divide-y">
                         <!-- Produtos para ordenação serão inseridos aqui -->
                     </div>
@@ -1711,7 +1645,7 @@
                             </div>
                         </div>
                     </div>
-
+                    
                     <div class="bg-white p-6 rounded-xl shadow">
                         <div class="flex items-center justify-between">
                             <div>
@@ -1723,7 +1657,7 @@
                             </div>
                         </div>
                     </div>
-
+                    
                     <div class="bg-white p-6 rounded-xl shadow">
                         <div class="flex items-center justify-between">
                             <div>
@@ -1742,24 +1676,24 @@
                     <div class="p-6 border-b">
                         <h3 class="text-lg font-semibold text-gray-800">Enviar Notificação para Todos os Usuários</h3>
                     </div>
-
+                    
                     <form id="notification-form" class="p-6 space-y-4">
                         <div>
                             <label class="block text-sm font-medium mb-1 text-gray-700">Título da Notificação *</label>
                             <input type="text" id="notification-title" required class="focus-ring w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2" placeholder="Ex: Promoção Especial!">
                         </div>
-
+                        
                         <div>
                             <label class="block text-sm font-medium mb-1 text-gray-700">Mensagem *</label>
                             <textarea id="notification-message" required rows="3" class="focus-ring w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2" placeholder="Ex: Aproveite nossos brownies com 20% de desconto!"></textarea>
                         </div>
-
+                        
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-medium mb-1 text-gray-700">URL (Opcional)</label>
                                 <input type="url" id="notification-url" class="focus-ring w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2" placeholder="https://...">
                             </div>
-
+                            
                             <div>
                                 <label class="block text-sm font-medium mb-1 text-gray-700">Ícone (Opcional)</label>
                                 <input type="url" id="notification-icon" class="focus-ring w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2" placeholder="https://...">
@@ -1786,12 +1720,12 @@
                     <div class="p-6 border-b">
                         <h3 class="text-lg font-semibold text-gray-800">Histórico de Notificações</h3>
                     </div>
-
+                    
                     <div class="p-4">
                         <div id="notifications-history-list" class="space-y-4">
                             <!-- Histórico será inserido aqui -->
                         </div>
-
+                        
                         <div id="empty-notifications-history" class="text-center py-8 text-gray-500">
                             <i class="fas fa-bell-slash text-4xl mb-3 opacity-30"></i>
                             <p>Nenhuma notificação enviada ainda.</p>
@@ -1805,21 +1739,22 @@
     <!-- Modal Adicionar Produto -->
     <div id="add-product-modal" class="fixed inset-0 flex items-center justify-center z-50 hidden">
         <div class="modal-overlay absolute inset-0"></div>
-
+        
         <div class="modal-content bg-white rounded-xl w-full max-w-4xl mx-4 z-10 shadow-2xl">
             <div class="p-6 border-b">
                 <h3 class="text-xl font-semibold text-gray-800">Adicionar Novo Produto</h3>
             </div>
-
+            
             <form id="product-form" class="p-6 space-y-4">
                 <input type="hidden" id="product-id">
-
+                
+                <!-- Informações básicas do produto -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-medium mb-1 text-gray-700">Nome do Produto *</label>
                         <input type="text" id="product-name" required class="focus-ring w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2">
                     </div>
-
+                    
                     <div>
                         <label class="block text-sm font-medium mb-1 text-gray-700">Categoria *</label>
                         <select id="product-category" required class="focus-ring w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2">
@@ -1827,18 +1762,18 @@
                         </select>
                     </div>
                 </div>
-
+                
                 <div>
                     <label class="block text-sm font-medium mb-1 text-gray-700">Descrição *</label>
                     <textarea id="product-description" required rows="3" class="focus-ring w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2"></textarea>
                 </div>
-
+                
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-medium mb-1 text-gray-700">Preço (R$) *</label>
                         <input type="number" id="product-price" step="0.01" required class="focus-ring w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2">
                     </div>
-
+                    
                     <div>
                         <label class="block text-sm font-medium mb-1 text-gray-700">Status</label>
                         <select id="product-status" class="focus-ring w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2">
@@ -1847,7 +1782,8 @@
                         </select>
                     </div>
                 </div>
-
+                
+                <!-- Seção de sabores -->
                 <div class="border-t pt-4">
                     <div class="flex justify-between items-center mb-4">
                         <h4 class="text-lg font-semibold">Sabores e Imagens</h4>
@@ -1855,12 +1791,12 @@
                             <i class="fas fa-plus mr-1"></i> Adicionar Sabor
                         </button>
                     </div>
-
+                    
                     <div id="sabores-container">
                         <!-- Sabores serão adicionadas dinamicamente aqui -->
                     </div>
                 </div>
-
+                
                 <div class="flex gap-3 pt-4 border-t">
                     <button type="button" id="cancel-product" class="flex-1 border border-gray-300 text-gray-700 py-2 rounded-lg">Cancelar</button>
                     <button type="submit" class="flex-1 btn-primary py-2 rounded-lg">
@@ -1874,29 +1810,29 @@
     <!-- Modal Adicionar Categoria -->
     <div id="add-category-modal" class="fixed inset-0 flex items-center justify-center z-50 hidden">
         <div class="modal-overlay absolute inset-0"></div>
-
+        
         <div class="modal-content bg-white rounded-xl w-full max-w-md mx-4 z-10 shadow-2xl">
             <div class="p-6 border-b">
                 <h3 class="text-xl font-semibold text-gray-800">Adicionar Nova Categoria</h3>
             </div>
-
+            
             <form id="category-form" class="p-6 space-y-4">
                 <div>
                     <label class="block text-sm font-medium mb-1 text-gray-700">Nome da Categoria *</label>
                     <input type="text" id="category-name" required class="focus-ring w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2" placeholder="Ex: Calças">
                 </div>
-
+                
                 <div>
                     <label class="block text-sm font-medium mb-1 text-gray-700">ID da Categoria *</label>
                     <input type="text" id="category-id" required class="focus-ring w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2" placeholder="Ex: calca">
                     <p class="text-xs text-gray-500 mt-1">Use apenas letras minúsculas, sem espaços ou caracteres especiais</p>
                 </div>
-
+                
                 <div>
                     <label class="block text-sm font-medium mb-1 text-gray-700">Descrição</label>
                     <textarea id="category-description" rows="3" class="focus-ring w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2" placeholder="Descreva esta categoria"></textarea>
                 </div>
-
+                
                 <div class="flex gap-3 pt-4 border-t">
                     <button type="button" id="cancel-category" class="flex-1 border border-gray-300 text-gray-700 py-2 rounded-lg">Cancelar</button>
                     <button type="submit" class="flex-1 btn-primary py-2 rounded-lg">
@@ -1910,12 +1846,12 @@
     <!-- Modal de Finalização de Compra -->
     <div id="checkout-modal" class="fixed inset-0 flex items-center justify-center z-50 hidden">
         <div class="modal-overlay absolute inset-0" id="checkout-overlay"></div>
-
+        
         <div class="modal-content bg-white rounded-xl w-full max-w-lg mx-4 z-10 shadow-2xl">
             <div class="p-6 border-b">
                 <h3 class="text-xl font-semibold text-gray-800">Finalizar Compra</h3>
             </div>
-
+            
             <form id="checkout-form" class="p-6 space-y-4">
                 <div>
                     <label class="block text-sm font-medium mb-1 text-gray-700">Nome completo *</label>
@@ -1956,6 +1892,7 @@
                     </div>
                 </div>
 
+                <!-- Endereço da loja -->
                 <div id="store-address" class="store-address">
                     <div class="store-address-title">
                         <i class="fas fa-map-marker-alt"></i>
@@ -1967,7 +1904,7 @@
                         Rua do Bar do Nego
                     </div>
                 </div>
-
+                
                 <div>
                     <label class="block text-sm font-medium mb-1 text-gray-700">Forma de pagamento *</label>
                     <select id="payment-method" required class="focus-ring w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2">
@@ -1978,6 +1915,7 @@
                     </select>
                 </div>
 
+                <!-- Informações PIX -->
                 <div id="pix-info" class="pix-info">
                     <div class="pix-info-title">
                         <i class="fas fa-qrcode"></i>
@@ -1990,6 +1928,7 @@
                     </div>
                 </div>
 
+                <!-- Opção de troco (só aparece se pagamento for dinheiro) -->
                 <div id="troco-fields" class="troco-fields">
                     <label class="block text-sm font-medium mb-1 text-gray-700">Precisa de troco?</label>
                     <div class="flex gap-4">
@@ -2007,7 +1946,7 @@
                         <input type="number" id="troco-value" step="0.01" class="focus-ring w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2" placeholder="Digite o valor que você vai pagar">
                     </div>
                 </div>
-
+                
                 <div class="bg-gray-50 p-4 rounded-lg mt-4">
                     <div class="flex justify-between font-semibold text-lg">
                         <span>Total:</span>
@@ -2018,7 +1957,7 @@
                         <span>Taxa de entrega: R$ 3,00</span>
                     </div>
                 </div>
-
+                
                 <div class="flex gap-3 pt-4">
                     <button type="button" id="cancel-checkout" class="flex-1 border border-gray-300 text-gray-700 py-2 rounded-lg">Cancelar</button>
                     <button type="submit" class="flex-1 btn-primary text-white py-2 rounded-lg">
@@ -2029,240 +1968,190 @@
         </div>
     </div>
 
+    <!-- NOVO MODAL: Configurações de Notificação -->
+    <div id="notification-settings-modal" class="fixed inset-0 flex items-center justify-center z-50 hidden">
+        <div class="modal-overlay absolute inset-0"></div>
+        
+        <div class="modal-content bg-white rounded-xl w-full max-w-md mx-4 z-10 shadow-2xl">
+            <div class="p-6 border-b">
+                <h3 class="text-xl font-semibold text-gray-800">Configurações de Notificação</h3>
+            </div>
+            
+            <div class="p-6 space-y-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="font-medium text-gray-800">Notificações Push</p>
+                        <p class="text-sm text-gray-500">Receba notificações sobre promoções e novidades</p>
+                    </div>
+                    <label class="notification-toggle">
+                        <input type="checkbox" id="push-notification-toggle">
+                        <span class="notification-slider"></span>
+                    </label>
+                </div>
+                
+                <div class="p-4 bg-blue-50 rounded-lg">
+                    <p class="text-sm text-blue-800">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        As notificações funcionam melhor quando o app está instalado no seu dispositivo.
+                    </p>
+                </div>
+                
+                <div id="notification-status" class="text-center py-4">
+                    <div id="notification-supported" class="hidden">
+                        <i class="fas fa-check-circle text-green-500 text-2xl mb-2"></i>
+                        <p class="text-sm text-gray-600">Notificações estão ativas!</p>
+                    </div>
+                    <div id="notification-unsupported" class="hidden">
+                        <i class="fas fa-times-circle text-red-500 text-2xl mb-2"></i>
+                        <p class="text-sm text-gray-600">Seu navegador não suporta notificações.</p>
+                    </div>
+                    <div id="notification-denied" class="hidden">
+                        <i class="fas fa-bell-slash text-yellow-500 text-2xl mb-2"></i>
+                        <p class="text-sm text-gray-600">Permissão para notificações foi negada.</p>
+                        <button id="enable-notifications" class="mt-2 text-sm text-blue-600 hover:text-blue-800">
+                            Ativar notificações nas configurações
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="flex gap-3 pt-4 border-t">
+                    <button type="button" id="close-notification-settings" class="flex-1 border border-gray-300 text-gray-700 py-2 rounded-lg">Fechar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <script>
-// DEVIDO AO LIMITE DE TOKENS, O CÓDIGO JAVASCRIPT COMPLETO ESTÁ NA PARTE 2
-// Continue usando seu código JavaScript original com as seguintes correções:
+        // ===== CONFIGURAÇÕES =====
+        const WHATSAPP_NUMBER = "5584996933713";
+        const IS_DEVELOPMENT = false;
+        // ATUALIZE ESTA URL PARA SEU BACKEND NO RENDER
+        const API_BASE_URL = "https://backend-vercel-tawny.vercel.app";
+        const DELIVERY_FEE = 3.00; // Taxa de entrega de R$ 3,00
 
-// ===== CONFIGURAÇÕES =====
-const WHATSAPP_NUMBER = "5584996933713";
-const IS_DEVELOPMENT = false;
-const API_BASE_URL = "https://backend-vercel-tawny.vercel.app";
-const DELIVERY_FEE = 3.00;
+        // ===== SISTEMA DE NOTIFICAÇÕES PUSH =====
+        let pushSubscription = null;
+        let isPushEnabled = false;
+        let publicVapidKey = '';
 
-// ===== SISTEMA DE NOTIFICAÇÕES PUSH - CORRIGIDO =====
-let pushSubscription = null;
-let isPushEnabled = false;
-let publicVapidKey = '';
-
-// Elementos de notificação
-const notificationBanner = document.getElementById('notification-banner');
-const bannerAllowBtn = document.getElementById('banner-allow-notifications');
-const bannerDismissBtn = document.getElementById('banner-dismiss-notifications');
-
-// FUNÇÃO CORRIGIDA: Solicitar permissão de notificações
-async function requestNotificationPermission() {
-    try {
-        console.log('🔔 Solicitando permissão para notificações...');
-
-        // Esconder banner
-        if (notificationBanner) {
-            notificationBanner.classList.remove('show');
+        // ===== SISTEMA DE AUTENTICAÇÃO =====
+        function simpleEncrypt(text) {
+            return btoa(unescape(encodeURIComponent(text))).split('').reverse().join('');
         }
 
-        const permission = await Notification.requestPermission();
-        console.log('📨 Permissão:', permission);
-
-        if (permission === 'granted') {
-            console.log('✅ Permissão concedida!');
-            await initializePushNotifications();
-            showToast('Notificações ativadas com sucesso!', 'success');
-        } else {
-            console.log('❌ Permissão negada');
-            showToast('Você pode ativar notificações nas configurações do navegador.', 'warning');
-        }
-    } catch (error) {
-        console.error('❌ Erro ao solicitar permissão:', error);
-        showToast('Erro ao ativar notificações.', 'error');
-    }
-}
-
-// FUNÇÃO CORRIGIDA: Inicializar notificações push
-async function initializePushNotifications() {
-    try {
-        // Verificar suporte
-        if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-            console.log('❌ Notificações push não suportadas');
-            return;
+        function simpleDecrypt(encrypted) {
+            return decodeURIComponent(escape(atob(encrypted.split('').reverse().join(''))));
         }
 
-        // Obter chave pública VAPID
-        const response = await fetch(`${API_BASE_URL}/api/notifications/public-key`);
-        const data = await response.json();
-        publicVapidKey = data.publicKey;
-        console.log('🔑 Chave VAPID obtida');
+        let authToken = null;
 
-        // Registrar Service Worker
-        const registration = await navigator.serviceWorker.register('/sw.js');
-        console.log('✅ Service Worker registrado');
+        function checkAuth() {
+            return authToken !== null;
+        }
 
-        // Aguardar Service Worker estar ativo
-        await navigator.serviceWorker.ready;
-        console.log('✅ Service Worker ativo');
-
-        // Verificar permissão atual
-        if (Notification.permission === 'granted') {
-            await subscribeToPushNotifications(registration);
-        } else if (Notification.permission === 'default') {
-            // Mostrar banner solicitando permissão
-            if (notificationBanner) {
-                // Aguardar 3 segundos antes de mostrar o banner
-                setTimeout(() => {
-                    notificationBanner.classList.add('show');
-                }, 3000);
+        async function login(username, password) {
+            try {
+                console.log('🔐 Tentando login...', username);
+                
+                const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                const data = await response.json();
+                console.log('📨 Resposta do login:', data);
+                
+                if (data.success) {
+                    authToken = data.token;
+                    localStorage.setItem('auth_token', data.token);
+                    return true;
+                } else {
+                    console.log('❌ Login falhou:', data.error);
+                    return false;
+                }
+            } catch (error) {
+                console.error('❌ Erro no login:', error);
+                return false;
             }
         }
 
-    } catch (error) {
-        console.error('❌ Erro ao inicializar notificações:', error);
-    }
-}
-
-// FUNÇÃO CORRIGIDA: Inscrever para notificações push
-async function subscribeToPushNotifications(registration) {
-    try {
-        // Verificar se já está inscrito
-        let subscription = await registration.pushManager.getSubscription();
-
-        if (subscription) {
-            pushSubscription = subscription;
-            isPushEnabled = true;
-            await sendSubscriptionToServer(subscription, 'subscribe');
-            console.log('✅ Já inscrito para notificações');
-            return;
+        function logout() {
+            authToken = null;
+            localStorage.removeItem('auth_token');
+            
+            document.getElementById('admin-section').style.display = 'none';
+            document.getElementById('login-section').classList.add('hidden');
+            document.getElementById('store-section').style.display = 'block';
+            document.getElementById('cart-section').classList.remove('active');
+            
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
         }
 
-        // Fazer nova inscrição
-        subscription = await registration.pushManager.subscribe({
-            userVisibleOnly: true,
-            applicationServerKey: urlBase64ToUint8Array(publicVapidKey)
-        });
-
-        pushSubscription = subscription;
-        isPushEnabled = true;
-        await sendSubscriptionToServer(subscription, 'subscribe');
-
-        console.log('✅ Inscrito para notificações push com sucesso!');
-
-    } catch (error) {
-        console.error('❌ Erro ao inscrever para notificações:', error);
-    }
-}
-
-// FUNÇÃO CORRIGIDA: Enviar subscription para o servidor
-async function sendSubscriptionToServer(subscription, type) {
-    try {
-        const deviceInfo = {
-            userAgent: navigator.userAgent,
-            platform: navigator.platform,
-            language: navigator.language,
-            isStandalone: isStandaloneApp(),
-            timestamp: new Date().toISOString()
-        };
-
-        const endpoint = type === 'subscribe'
-            ? `${API_BASE_URL}/api/notifications/subscribe`
-            : `${API_BASE_URL}/api/notifications/unsubscribe`;
-
-        const response = await fetch(endpoint, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                subscription: subscription,
-                deviceInfo: deviceInfo
-            })
-        });
-
-        const data = await response.json();
-        console.log(`✅ Subscription ${type === 'subscribe' ? 'registrada' : 'removida'}:`, data);
-
-    } catch (error) {
-        console.error(`❌ Erro ao ${type === 'subscribe' ? 'registrar' : 'remover'} subscription:`, error);
-    }
-}
-
-// Função auxiliar
-function urlBase64ToUint8Array(base64String) {
-    const padding = '='.repeat((4 - base64String.length % 4) % 4);
-    const base64 = (base64String + padding)
-        .replace(/\-/g, '+')
-        .replace(/_/g, '/');
-
-    const rawData = window.atob(base64);
-    const outputArray = new Uint8Array(rawData.length);
-
-    for (let i = 0; i < rawData.length; ++i) {
-        outputArray[i] = rawData.charCodeAt(i);
-    }
-    return outputArray;
-}
-
-// Event listeners do banner
-if (bannerAllowBtn) {
-    bannerAllowBtn.addEventListener('click', requestNotificationPermission);
-}
-
-if (bannerDismissBtn) {
-    bannerDismissBtn.addEventListener('click', () => {
-        if (notificationBanner) {
-            notificationBanner.classList.remove('show');
+        async function verifyAuth() {
+            const savedToken = localStorage.getItem('auth_token');
+            
+            if (savedToken) {
+                try {
+                    const response = await fetch(`${API_BASE_URL}/api/auth/verify`, {
+                        headers: {
+                            'Authorization': `Bearer ${savedToken}`
+                        }
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.valid) {
+                        authToken = savedToken;
+                        return true;
+                    } else {
+                        localStorage.removeItem('auth_token');
+                        return false;
+                    }
+                } catch (error) {
+                    console.error('Erro ao verificar autenticação:', error);
+                    return false;
+                }
+            }
+            
+            return false;
         }
-    });
-}
 
-// Verificar se é app instalado
-function isStandaloneApp() {
-    return window.matchMedia('(display-mode: standalone)').matches ||
-        window.navigator.standalone === true ||
-        document.referrer.includes('android-app://');
-}
+        // ===== SISTEMA DE ROTEAMENTO =====
+        function setupRouting() {
+            checkRoute();
+            window.addEventListener('hashchange', checkRoute);
+        }
 
-// Inicializar notificações quando o documento carregar
-document.addEventListener('DOMContentLoaded', () => {
-    console.log('📱 Inicializando sistema de notificações...');
-    initializePushNotifications();
-});
+        async function checkRoute() {
+            const isAdminRoute = window.location.hash === '#/admin';
+            
+            if (isAdminRoute) {
+                const isAuthenticated = await verifyAuth();
+                
+                if (isAuthenticated) {
+                    showAdminView();
+                } else {
+                    showLoginView();
+                }
+            } else {
+                showStoreView();
+            }
+        }
 
-// Função showToast
-function showToast(message, type = 'success') {
-    const toast = document.getElementById('toast-notification');
-    const toastMessage = document.getElementById('toast-message');
+        function updateRoute(view) {
+            if (view === 'admin') {
+                window.location.hash = '#/admin';
+            } else {
+                window.location.hash = '';
+            }
+        }
 
-    if (!toast || !toastMessage) return;
-
-    toastMessage.textContent = message;
-
-    if (type === 'success') {
-        toast.style.background = '#10b981';
-    } else if (type === 'error') {
-        toast.style.background = '#ef4444';
-    } else if (type === 'warning') {
-        toast.style.background = '#f59e0b';
-    }
-
-    toast.classList.remove('show');
-
-    setTimeout(() => {
-        toast.classList.add('show');
-    }, 10);
-
-    setTimeout(() => {
-        hideToast();
-    }, 3000);
-}
-
-function hideToast() {
-    const toast = document.getElementById('toast-notification');
-    if (toast) {
-        toast.classList.remove('show');
-    }
-}
-
-// INSIRA AQUI TODO O RESTANTE DO SEU CÓDIGO JAVASCRIPT ORIGINAL
-// (A partir de "let cart = [];" até o final)
- // ===== ESTADO DA APLICAÇÃO =====
+        // ===== ESTADO DA APLICAÇÃO =====
         let cart = [];
         let filteredProducts = [];
         let products = [];
@@ -5018,23 +4907,25 @@ function hideToast() {
         // ===== INICIALIZAR APLICAÇÃO =====
         init();
     </script>
-
+    
+    <!-- Service Worker Registration -->
     <script>
         // Registrar Service Worker para PWA
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', function() {
                 navigator.serviceWorker.register('/sw.js')
                     .then(function(registration) {
-                        console.log('✅ Service Worker registrado:', registration);
+                        console.log('Service Worker registrado com sucesso:', registration);
                     })
                     .catch(function(error) {
-                        console.log('❌ Falha ao registrar Service Worker:', error);
+                        console.log('Falha ao registrar Service Worker:', error);
                     });
             });
         }
 
-        // Prevenir zoom e comportamentos indesejados
+        // ===== PREVENIR ZOOM E COMPORTAMENTOS INDESEJADOS =====
         document.addEventListener('DOMContentLoaded', function() {
+            // Prevenir zoom com double tap
             let lastTouchEnd = 0;
             document.addEventListener('touchend', function (event) {
                 const now = (new Date()).getTime();
@@ -5044,6 +4935,7 @@ function hideToast() {
                 lastTouchEnd = now;
             }, false);
 
+            // Prevenir zoom com gesto de pinch
             document.addEventListener('gesturestart', function (e) {
                 e.preventDefault();
             });
@@ -5054,6 +4946,7 @@ function hideToast() {
                 e.preventDefault();
             });
 
+            // Prevenir seleção de texto em elementos interativos
             const interactiveElements = document.querySelectorAll('button, .sabor-option, .quantity-btn, .add-to-cart-btn, .nav-tab, .product-order-handle');
             interactiveElements.forEach(el => {
                 el.style.webkitUserSelect = 'none';
@@ -5064,12 +4957,14 @@ function hideToast() {
             });
         });
 
+        // Prevenir comportamento de pull-to-refresh em mobile
         document.addEventListener('touchmove', function (e) {
-            if (e.scale !== 1) {
-                e.preventDefault();
+            if (e.scale !== 1) { 
+                e.preventDefault(); 
             }
         }, { passive: false });
 
+        // Garantir que a viewport não permita zoom
         const viewport = document.querySelector('meta[name="viewport"]');
         if (viewport) {
             viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');

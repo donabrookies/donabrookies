@@ -1,158 +1,190 @@
-// Service Worker para PWA - Dona Brookies
-const CACHE_NAME = 'dona-brookies-v1';
-const urlsToCache = [
+// Service Worker para Dona Brookies PWA
+const CACHE_NAME = 'dona-brookies-v2.0.0';
+const STATIC_CACHE = 'static-cache-v2';
+const DYNAMIC_CACHE = 'dynamic-cache-v2';
+
+// Arquivos para cache estático
+const STATIC_FILES = [
     '/',
     '/index.html',
     '/manifest.json',
-    '/icons/icon-192x192.png',
-    '/icons/icon-512x512.png'
+    '/imagem_72x72.png',
+    '/imagem_192x192.png',
+    '/imagem_512x512.png',
+    'https://cdn.tailwindcss.com',
+    'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css',
+    'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap',
+    'https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js'
 ];
 
 // Instalação do Service Worker
 self.addEventListener('install', (event) => {
-    console.log('✅ Service Worker: Instalando...');
+    console.log('🚀 Service Worker instalando...');
+    
     event.waitUntil(
-        caches.open(CACHE_NAME)
+        caches.open(STATIC_CACHE)
             .then((cache) => {
-                console.log('✅ Service Worker: Cache aberto');
-                return cache.addAll(urlsToCache);
+                console.log('📦 Cache estático sendo preenchido...');
+                return cache.addAll(STATIC_FILES);
+            })
+            .then(() => {
+                console.log('✅ Service Worker instalado com sucesso!');
+                return self.skipWaiting();
             })
             .catch((error) => {
-                console.error('❌ Erro ao criar cache:', error);
+                console.error('❌ Erro na instalação do Service Worker:', error);
             })
     );
-    self.skipWaiting();
 });
 
 // Ativação do Service Worker
 self.addEventListener('activate', (event) => {
-    console.log('✅ Service Worker: Ativando...');
+    console.log('🔄 Service Worker ativando...');
+    
     event.waitUntil(
-        caches.keys().then((cacheNames) => {
-            return Promise.all(
-                cacheNames.map((cacheName) => {
-                    if (cacheName !== CACHE_NAME) {
-                        console.log('🗑️ Service Worker: Removendo cache antigo:', cacheName);
-                        return caches.delete(cacheName);
-                    }
-                })
-            );
-        })
+        caches.keys()
+            .then((cacheNames) => {
+                return Promise.all(
+                    cacheNames.map((cacheName) => {
+                        if (cacheName !== STATIC_CACHE && cacheName !== DYNAMIC_CACHE) {
+                            console.log('🗑️ Removendo cache antigo:', cacheName);
+                            return caches.delete(cacheName);
+                        }
+                    })
+                );
+            })
+            .then(() => {
+                console.log('✅ Service Worker ativado com sucesso!');
+                return self.clients.claim();
+            })
     );
-    return self.clients.claim();
 });
 
-// Fetch - Estratégia Network First, depois Cache
+// Interceptar requisições
 self.addEventListener('fetch', (event) => {
+    // Não cachear requisições para a API
+    if (event.request.url.includes('/api/') || event.request.url.includes('vercel.app')) {
+        return;
+    }
+
     event.respondWith(
-        fetch(event.request)
+        caches.match(event.request)
             .then((response) => {
-                // Clone a resposta
-                const responseToCache = response.clone();
+                if (response) {
+                    return response;
+                }
 
-                caches.open(CACHE_NAME).then((cache) => {
-                    cache.put(event.request, responseToCache);
-                });
+                return fetch(event.request)
+                    .then((fetchResponse) => {
+                        // Só cachear se for uma resposta válida
+                        if (!fetchResponse || fetchResponse.status !== 200 || fetchResponse.type !== 'basic') {
+                            return fetchResponse;
+                        }
 
-                return response;
-            })
-            .catch(() => {
-                return caches.match(event.request);
+                        const responseToCache = fetchResponse.clone();
+
+                        caches.open(DYNAMIC_CACHE)
+                            .then((cache) => {
+                                cache.put(event.request, responseToCache);
+                            });
+
+                        return fetchResponse;
+                    })
+                    .catch(() => {
+                        // Fallback para página offline se disponível
+                        if (event.request.destination === 'document') {
+                            return caches.match('/');
+                        }
+                    });
             })
     );
 });
 
-// ===== NOTIFICAÇÕES PUSH =====
+// ===== SISTEMA DE NOTIFICAÇÕES PUSH =====
 
-// Escutar notificações push
+// Escutar mensagens push
 self.addEventListener('push', (event) => {
-    console.log('🔔 Service Worker: Notificação push recebida');
-
-    let notificationData = {
-        title: 'Dona Brookies',
-        body: 'Nova notificação!',
-        icon: '/icons/icon-192x192.png',
-        badge: '/icons/icon-192x192.png',
-        data: {
-            url: '/'
-        }
-    };
-
-    if (event.data) {
-        try {
-            notificationData = event.data.json();
-            console.log('📨 Dados da notificação:', notificationData);
-        } catch (error) {
-            console.error('❌ Erro ao processar dados da notificação:', error);
-            notificationData.body = event.data.text();
-        }
+    console.log('📨 Push message received', event);
+    
+    let data = {};
+    
+    try {
+        data = event.data ? event.data.json() : {};
+    } catch (error) {
+        console.error('❌ Erro ao processar dados push:', error);
+        data = {
+            title: 'Dona Brookies',
+            body: 'Nova mensagem da Dona Brookies!',
+            icon: '/imagem_192x192.png'
+        };
     }
 
     const options = {
-        body: notificationData.body || notificationData.message,
-        icon: notificationData.icon || '/icons/icon-192x192.png',
-        badge: notificationData.badge || '/icons/icon-192x192.png',
-        image: notificationData.image,
-        vibrate: [200, 100, 200],
-        data: notificationData.data || { url: notificationData.url || '/' },
-        actions: notificationData.actions || [
+        body: data.body || 'Nova notificação da Dona Brookies',
+        icon: data.icon || '/imagem_192x192.png',
+        badge: data.badge || '/imagem_192x192.png',
+        image: data.image || '/imagem_192x192.png',
+        data: data.data || { url: '/' },
+        actions: data.actions || [
             {
                 action: 'open',
                 title: 'Abrir App'
             },
             {
-                action: 'close',
+                action: 'close', 
                 title: 'Fechar'
             }
         ],
-        requireInteraction: false,
-        tag: 'dona-brookies-notification',
-        renotify: true
+        requireInteraction: true,
+        vibrate: [200, 100, 200],
+        tag: data.tag || 'dona-brookies-notification'
     };
 
     event.waitUntil(
-        self.registration.showNotification(notificationData.title, options)
-            .then(() => {
-                console.log('✅ Notificação exibida com sucesso!');
-            })
-            .catch((error) => {
-                console.error('❌ Erro ao exibir notificação:', error);
-            })
+        self.registration.showNotification(data.title || 'Dona Brookies', options)
     );
 });
 
-// Clique na notificação
+// Escutar cliques em notificações
 self.addEventListener('notificationclick', (event) => {
-    console.log('👆 Notificação clicada:', event.action);
-
+    console.log('🔔 Notification click received', event);
+    
     event.notification.close();
-
-    if (event.action === 'close') {
-        return;
-    }
 
     const urlToOpen = event.notification.data?.url || '/';
 
     event.waitUntil(
-        clients.matchAll({ type: 'window', includeUncontrolled: true })
-            .then((clientList) => {
-                // Verificar se já existe uma janela aberta
-                for (const client of clientList) {
-                    if (client.url === urlToOpen && 'focus' in client) {
-                        return client.focus();
-                    }
+        clients.matchAll({
+            type: 'window',
+            includeUncontrolled: true
+        }).then((windowClients) => {
+            // Verificar se já existe uma janela/tab aberta
+            for (let client of windowClients) {
+                if (client.url.includes(self.location.origin) && 'focus' in client) {
+                    return client.focus();
                 }
-                // Se não houver janela aberta, abrir uma nova
-                if (clients.openWindow) {
-                    return clients.openWindow(urlToOpen);
-                }
-            })
+            }
+
+            // Se não existe, abrir nova janela
+            if (clients.openWindow) {
+                return clients.openWindow(urlToOpen);
+            }
+        })
     );
 });
 
-// Fechamento da notificação
+// Escutar ações de notificação
 self.addEventListener('notificationclose', (event) => {
-    console.log('🔕 Notificação fechada:', event.notification.tag);
+    console.log('❌ Notification closed', event);
 });
 
-console.log('🚀 Service Worker carregado com sucesso!');
+// Escutar mensagens do cliente
+self.addEventListener('message', (event) => {
+    console.log('📩 Message received from client:', event.data);
+    
+    if (event.data && event.data.type === 'SKIP_WAITING') {
+        self.skipWaiting();
+    }
+});
+
+console.log('🔔 Service Worker carregado com sistema de notificações!');
