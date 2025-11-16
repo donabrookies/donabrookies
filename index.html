@@ -32,6 +32,11 @@
         body {
             font-family: 'Inter', sans-serif;
             background-color: var(--urbanz-cream);
+            /* CORREÇÃO ANDROID: Permitir scroll */
+            overflow-x: hidden;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            height: 100%;
             /* PREVENIR ZOOM E COMPORTAMENTOS DE TOQUE INDESEJADOS */
             touch-action: pan-x pan-y;
             -webkit-touch-callout: none;
@@ -41,6 +46,22 @@
             -ms-user-select: none;
             user-select: none;
             -webkit-tap-highlight-color: transparent;
+        }
+        
+        /* CORREÇÃO ANDROID: Garantir que todas as seções principais permitam scroll */
+        #store-section,
+        #cart-section,
+        #admin-section,
+        .container,
+        main {
+            overflow-x: hidden;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        /* CORREÇÃO ANDROID: Garantir que o conteúdo principal tenha altura suficiente para scroll */
+        main {
+            min-height: calc(100vh - 200px);
         }
         
         /* Tela de Boas-Vindas - APENAS PARA APP */
@@ -57,6 +78,9 @@
             justify-content: center;
             z-index: 9999;
             transition: opacity 0.5s ease-out;
+            /* CORREÇÃO ANDROID: Permitir scroll se necessário */
+            overflow: auto;
+            -webkit-overflow-scrolling: touch;
         }
         
         .welcome-screen.active {
@@ -126,6 +150,9 @@
             right: 0;
             bottom: 0;
             z-index: 9999;
+            /* CORREÇÃO ANDROID: Permitir scroll */
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
         }
         
         .login-card {
@@ -135,6 +162,8 @@
             width: 100%;
             max-width: 400px;
             overflow: hidden;
+            /* CORREÇÃO ANDROID: Margem para não colar nas bordas */
+            margin: 20px;
         }
         
         .login-header {
@@ -1200,6 +1229,67 @@
 
         .notification-toggle input:checked + .notification-slider:before {
             transform: translateX(26px);
+        }
+        
+        /* ===== CORREÇÕES ESPECÍFICAS PARA ANDROID ===== */
+        
+        /* CORREÇÃO ANDROID: Garantir que o body permita scroll */
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        /* CORREÇÃO ANDROID: Garantir que todas as seções principais permitam scroll */
+        #store-section,
+        #cart-section,
+        #admin-section,
+        .container,
+        main,
+        .products-grid,
+        .filter-sidebar,
+        .mobile-filter-menu,
+        .tab-content,
+        .admin-table {
+            overflow-x: hidden;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        /* CORREÇÃO ANDROID: Remover qualquer overflow: hidden que possa bloquear o scroll */
+        .sticky {
+            position: -webkit-sticky;
+            position: sticky;
+        }
+        
+        /* CORREÇÃO ANDROID: Garantir que modais não interfiram no scroll do body */
+        .hidden {
+            display: none !important;
+        }
+        
+        /* CORREÇÃO ANDROID: Garantir que elementos com position fixed não bloqueiem */
+        .urbanz-header {
+            position: sticky;
+            z-index: 10;
+        }
+        
+        /* CORREÇÃO ANDROID: Melhorar experiência de scroll em dispositivos móveis */
+        @media (max-width: 768px) {
+            body {
+                overflow-y: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+            
+            #store-section,
+            #cart-section.active,
+            #admin-section {
+                height: auto;
+                min-height: 100vh;
+                overflow-y: auto;
+                -webkit-overflow-scrolling: touch;
+            }
         }
     </style>
 </head>
@@ -3428,7 +3518,7 @@
 
         // ===== INICIALIZAÇÃO =====
         async function init() {
-            // CORREÇÃO iOS: Mostrar tela de boas-vindas APENAS se for app
+            // CORREÇÃO ANDROID: Mostrar tela de boas-vindas APENAS se for app
             if (isStandaloneApp()) {
                 console.log('📱 É um app instalado - Mostrando tela de boas-vindas');
                 showWelcomeScreen();
