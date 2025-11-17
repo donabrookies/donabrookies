@@ -29,16 +29,28 @@
             --urbanz-secondary: #a5784f;
         }
         
+        /* CORREÇÃO ANDROID: Reset completo para garantir scroll */
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: auto;
+            -webkit-overflow-scrolling: touch;
+            touch-action: pan-y;
+            position: relative;
+        }
+        
         body {
             font-family: 'Inter', sans-serif;
             background-color: var(--urbanz-cream);
-            /* CORREÇÃO ANDROID: Permitir scroll */
+            /* CORREÇÃO ANDROID: Permitir scroll sempre */
             overflow-x: hidden;
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
-            height: 100%;
+            height: auto;
+            min-height: 100vh;
             /* PREVENIR ZOOM E COMPORTAMENTOS DE TOQUE INDESEJADOS */
-            touch-action: pan-x pan-y;
+            touch-action: pan-y;
             -webkit-touch-callout: none;
             -webkit-user-select: none;
             -khtml-user-select: none;
@@ -57,11 +69,15 @@
             overflow-x: hidden;
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
+            height: auto;
+            min-height: 100vh;
         }
         
         /* CORREÇÃO ANDROID: Garantir que o conteúdo principal tenha altura suficiente para scroll */
         main {
             min-height: calc(100vh - 200px);
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
         }
         
         /* Tela de Boas-Vindas - APENAS PARA APP */
@@ -1240,6 +1256,7 @@
             padding: 0;
             overflow: auto;
             -webkit-overflow-scrolling: touch;
+            position: relative;
         }
         
         /* CORREÇÃO ANDROID: Garantir que todas as seções principais permitam scroll */
@@ -1256,6 +1273,8 @@
             overflow-x: hidden;
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
+            height: auto;
+            min-height: 100vh;
         }
         
         /* CORREÇÃO ANDROID: Remover qualquer overflow: hidden que possa bloquear o scroll */
@@ -1280,6 +1299,8 @@
             body {
                 overflow-y: auto;
                 -webkit-overflow-scrolling: touch;
+                height: auto;
+                min-height: 100vh;
             }
             
             #store-section,
@@ -1290,10 +1311,29 @@
                 overflow-y: auto;
                 -webkit-overflow-scrolling: touch;
             }
+            
+            /* CORREÇÃO ANDROID: Garantir que elementos com position fixed não bloqueiem scroll */
+            .urbanz-header {
+                position: sticky;
+                top: 0;
+                z-index: 10;
+            }
+            
+            /* CORREÇÃO ANDROID: Permitir scroll em todos os containers */
+            .container, main, .products-grid {
+                overflow-y: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+        }
+        
+        /* CORREÇÃO ANDROID: Scroll sempre habilitado */
+        .scroll-enabled {
+            overflow-y: auto !important;
+            -webkit-overflow-scrolling: touch !important;
         }
     </style>
 </head>
-<body>
+<body class="scroll-enabled">
     <!-- Tela de Boas-Vindas - APENAS PARA APP -->
     <div id="welcome-screen" class="welcome-screen">
         <img src="WhatsApp Image 2025-10-16 at 14.55.25.jpeg" alt="Dona Brookies" class="welcome-logo">
@@ -1340,7 +1380,7 @@
     </div>
 
     <!-- Conteúdo da Loja -->
-    <div id="store-section">
+    <div id="store-section" class="scroll-enabled">
         <header class="urbanz-header shadow-lg sticky top-0 z-10">
             <div class="container mx-auto px-4 py-4 flex items-center justify-between">
                 <div class="flex items-center">
@@ -1427,7 +1467,7 @@
             </button>
         </div>
 
-        <main class="container mx-auto px-4 py-8">
+        <main class="container mx-auto px-4 py-8 scroll-enabled">
             <button class="mobile-filter-btn urbanz-filter-btn px-4 py-2 rounded-lg shadow flex items-center gap-2 md:hidden" id="mobile-filter-btn">
                 <i class="fas fa-filter"></i>
                 <span>Filtros</span>
@@ -1461,7 +1501,7 @@
                     </div>
                 </aside>
 
-                <div class="w-full md:w-3/4">
+                <div class="w-full md:w-3/4 scroll-enabled">
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 products-grid" id="products-grid">
                         <!-- Produtos serão inseridos aqui via JavaScript -->
                     </div>
@@ -1519,7 +1559,7 @@
     </div>
 
     <!-- TELA DO CARRINHO -->
-    <div id="cart-section" class="cart-section">
+    <div id="cart-section" class="cart-section scroll-enabled">
         <header class="urbanz-header shadow-lg sticky top-0 z-10">
             <div class="container mx-auto px-4 py-4 flex items-center justify-between">
                 <div class="flex items-center gap-4">
@@ -1541,7 +1581,7 @@
             </div>
         </header>
 
-        <main class="container mx-auto px-4 py-8">
+        <main class="container mx-auto px-4 py-8 scroll-enabled">
             <div id="cart-content" class="bg-white rounded-xl shadow p-6">
                 <div class="text-center py-10 text-gray-500" id="empty-cart-page">
                     <i class="fas fa-shopping-cart text-6xl mb-4 opacity-30"></i>
@@ -1590,7 +1630,7 @@
     </div>
 
     <!-- PAINEL ADMINISTRATIVO -->
-    <div id="admin-section" class="admin-section">
+    <div id="admin-section" class="admin-section scroll-enabled">
         <header class="urbanz-header shadow-lg sticky top-0 z-10">
             <div class="container mx-auto px-4 py-4 flex items-center justify-between flex-wrap gap-3">
                 <div class="brand-container">
@@ -1613,7 +1653,7 @@
             </div>
         </header>
 
-        <main class="container mx-auto px-4 py-8">
+        <main class="container mx-auto px-4 py-8 scroll-enabled">
             <div class="flex mb-6 border-b nav-tabs flex-wrap">
                 <button class="nav-tab px-4 py-3 font-medium active" data-tab="dashboard">
                     <i class="fas fa-chart-pie mr-2"></i>Dashboard
@@ -1639,7 +1679,7 @@
             </div>
 
             <!-- Dashboard Tab -->
-            <div id="tab-dashboard" class="tab-content">
+            <div id="tab-dashboard" class="tab-content scroll-enabled">
                 <h2 class="text-2xl font-bold mb-6 text-gray-800">Visão Geral</h2>
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 dashboard-cards">
@@ -1702,7 +1742,7 @@
             </div>
 
             <!-- Products Tab -->
-            <div id="tab-products" class="tab-content hidden">
+            <div id="tab-products" class="tab-content hidden scroll-enabled">
                 <div class="flex justify-between items-center mb-6 flex-wrap gap-3">
                     <h2 class="text-2xl font-bold text-gray-800">Gerenciamento de Produtos</h2>
                     <button id="add-product-btn" class="urbanz-admin-btn hover:bg-blue-700 px-4 py-2 rounded-full shadow flex items-center gap-2">
@@ -1745,7 +1785,7 @@
             </div>
 
             <!-- Categories Tab -->
-            <div id="tab-categories" class="tab-content hidden">
+            <div id="tab-categories" class="tab-content hidden scroll-enabled">
                 <div class="flex justify-between items-center mb-6 flex-wrap gap-3">
                     <h2 class="text-2xl font-bold text-gray-800">Gerenciamento de Categorias</h2>
                     <button id="add-category-btn" class="urbanz-admin-btn hover:bg-blue-700 px-4 py-2 rounded-full shadow flex items-center gap-2">
@@ -1760,7 +1800,7 @@
             </div>
 
             <!-- Ordering Tab -->
-            <div id="tab-ordering" class="tab-content hidden">
+            <div id="tab-ordering" class="tab-content hidden scroll-enabled">
                 <div class="flex justify-between items-center mb-6 flex-wrap gap-3">
                     <h2 class="text-2xl font-bold text-gray-800">Ordenação de Produtos</h2>
                     <button id="save-ordering-btn" class="urbanz-admin-btn hover:bg-blue-700 px-4 py-2 rounded-full shadow flex items-center gap-2">
@@ -1784,7 +1824,7 @@
             </div>
 
             <!-- NOVA ABA: Cupons -->
-            <div id="tab-coupons" class="tab-content hidden">
+            <div id="tab-coupons" class="tab-content hidden scroll-enabled">
                 <div class="flex justify-between items-center mb-6 flex-wrap gap-3">
                     <h2 class="text-2xl font-bold text-gray-800">Gerenciamento de Cupons</h2>
                     <button id="add-coupon-btn" class="urbanz-admin-btn hover:bg-blue-700 px-4 py-2 rounded-full shadow flex items-center gap-2">
@@ -1821,7 +1861,7 @@
             </div>
 
             <!-- NOVA ABA: Notificações -->
-            <div id="tab-notifications" class="tab-content hidden">
+            <div id="tab-notifications" class="tab-content hidden scroll-enabled">
                 <div class="flex justify-between items-center mb-6 flex-wrap gap-3">
                     <h2 class="text-2xl font-bold text-gray-800">Sistema de Notificações</h2>
                     <div class="flex gap-3">
