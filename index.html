@@ -853,6 +853,37 @@
             to { transform: translateY(0); opacity: 1; }
         }
         
+        /* CORREÇÃO: Header e Footer - Reduzindo tamanho */
+        header.urbanz-header {
+            padding: 0.5rem 0;
+        }
+        
+        header .container {
+            padding-top: 0.5rem;
+            padding-bottom: 0.5rem;
+        }
+        
+        .brand-logo {
+            height: 32px; /* Reduzido de 40px */
+        }
+        
+        .brand-container h1 {
+            font-size: 1.5rem; /* Reduzido de 2rem */
+        }
+        
+        .brand-subtitle {
+            font-size: 0.75rem; /* Reduzido */
+        }
+        
+        footer {
+            padding: 1rem 0; /* Reduzido */
+        }
+        
+        footer .container {
+            padding-top: 1rem;
+            padding-bottom: 1rem;
+        }
+        
         /* Media queries para responsividade */
         @media (max-width: 1024px) {
             .container {
@@ -873,7 +904,11 @@
             }
             
             .brand-logo {
-                height: 32px;
+                height: 28px; /* Reduzido para mobile */
+            }
+            
+            .brand-container h1 {
+                font-size: 1.25rem; /* Reduzido para mobile */
             }
             
             .search-input {
@@ -1046,7 +1081,7 @@
             }
             
             .brand-logo {
-                height: 28px;
+                height: 24px; /* Reduzido ainda mais para telas pequenas */
             }
 
             .modal-content {
@@ -1331,9 +1366,26 @@
             overflow-y: auto !important;
             -webkit-overflow-scrolling: touch !important;
         }
+        
+        /* NOVAS CORREÇÕES: Melhorias de scroll para todos os dispositivos */
+        .scroll-fix {
+            -webkit-overflow-scrolling: touch;
+            overflow-scrolling: touch;
+        }
+        
+        /* Forçar scroll suave em todos os elementos */
+        * {
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        /* Prevenir problemas de scroll em iOS */
+        .ios-scroll-fix {
+            -webkit-transform: translateZ(0);
+            transform: translateZ(0);
+        }
     </style>
 </head>
-<body class="scroll-enabled">
+<body class="scroll-enabled ios-scroll-fix">
     <!-- Tela de Boas-Vindas - APENAS PARA APP -->
     <div id="welcome-screen" class="welcome-screen">
         <img src="WhatsApp Image 2025-10-16 at 14.55.25.jpeg" alt="Dona Brookies" class="welcome-logo">
@@ -1380,9 +1432,9 @@
     </div>
 
     <!-- Conteúdo da Loja -->
-    <div id="store-section" class="scroll-enabled">
+    <div id="store-section" class="scroll-enabled scroll-fix">
         <header class="urbanz-header shadow-lg sticky top-0 z-10">
-            <div class="container mx-auto px-4 py-4 flex items-center justify-between">
+            <div class="container mx-auto px-1 py-2 flex items-center justify-between">
                 <div class="flex items-center">
                     <button class="mobile-menu-btn mr-3 md:hidden" id="mobile-menu-btn">
                         <i class="fas fa-bars text-xl"></i>
@@ -1390,8 +1442,8 @@
                     <div class="brand-container">
                         <img src="WhatsApp Image 2025-10-16 at 14.55.25.jpeg" alt="UBZ UrbanZ" class="brand-logo">
                         <div class="flex flex-col">
-                            <h1 class="text-2xl font-bold brand-text">Dona Brookies</h1>
-                            <span class="text-sm brand-subtitle hidden md:block">Doceria</span>
+                            <h1 class="text-xl font-bold brand-text">Dona Brookies</h1>
+                            <span class="text-xs brand-subtitle hidden md:block">Doceria</span>
                         </div>
                     </div>
                 </div>
@@ -1417,7 +1469,7 @@
             </div>
             
             <!-- Barra de pesquisa mobile -->
-            <div class="container mx-auto px-4 pb-4 md:hidden">
+            <div class="container mx-auto px-4 pb-3 md:hidden">
                 <div class="relative">
                     <input
                         id="search-input-mobile"
@@ -1467,7 +1519,7 @@
             </button>
         </div>
 
-        <main class="container mx-auto px-4 py-8 scroll-enabled">
+        <main class="container mx-auto px-4 py-6 scroll-enabled scroll-fix">
             <button class="mobile-filter-btn urbanz-filter-btn px-4 py-2 rounded-lg shadow flex items-center gap-2 md:hidden" id="mobile-filter-btn">
                 <i class="fas fa-filter"></i>
                 <span>Filtros</span>
@@ -1501,7 +1553,7 @@
                     </div>
                 </aside>
 
-                <div class="w-full md:w-3/4 scroll-enabled">
+                <div class="w-full md:w-3/4 scroll-enabled scroll-fix">
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 products-grid" id="products-grid">
                         <!-- Produtos serão inseridos aqui via JavaScript -->
                     </div>
@@ -1515,19 +1567,19 @@
             <span id="mobile-cart-count" class="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">0</span>
         </button>
 
-        <footer class="border-t mt-12" style="background-color: var(--urbanz-dark);">
-            <div class="container mx-auto px-4 py-8">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <footer class="border-t mt-8" style="background-color: var(--urbanz-dark);">
+            <div class="container mx-auto px-4 py-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div>
-                        <div class="brand-container mb-4">
-                            <img src="WhatsApp Image 2025-10-16 at 14.55.25.jpeg" alt="UBZ UrbanZ" class="brand-logo" style="height: 32px;">
-                            <h3 class="font-bold text-lg brand-texto">Dona Brookies</h3>
+                        <div class="brand-container mb-3">
+                            <img src="WhatsApp Image 2025-10-16 at 14.55.25.jpeg" alt="UBZ UrbanZ" class="brand-logo" style="height: 28px;">
+                            <h3 class="font-bold text-md brand-texto">Dona Brookies</h3>
                         </div>
                         <p class="text-gray-600 text-sm" style="color: var(--urbanz-light);">Brownies e cookies feitos com amor e crocância!</p>
                     </div>
                     
                     <div>
-                        <h4 class="font-semibold mb-4 " style="color: var(--urbanz-light)"; >Contato </h4>
+                        <h4 class="font-semibold mb-3 " style="color: var(--urbanz-light)"; >Contato </h4>
                         <p class="text-gray-600 text-sm">
                             <i class="fas fa-whatsapp mr-2 text-green-500"></i>
                             <span style="color: var(--urbanz-light);">(84) 99693-3713</span>
@@ -1536,7 +1588,7 @@
                     </div>
                     
                     <div>
-    <h4 class="font-semibold mb-4" style="color: var(--urbanz-light);">Redes Sociais</h4>
+    <h4 class="font-semibold mb-3" style="color: var(--urbanz-light);">Redes Sociais</h4>
     <div class="flex gap-4">
         <a href="https://www.instagram.com/donabrookies/" style="color: var(--urbanz-light);" class="hover:opacity-70">
             <i class="fab fa-instagram text-lg"></i>
@@ -1551,7 +1603,7 @@
 </div>
 </div>
 
-<div class="border-t mt-8 pt-6 text-center text-sm" style="color: var(--urbanz-light);">
+<div class="border-t mt-6 pt-4 text-center text-sm" style="color: var(--urbanz-light);">
     © 2025 Dona Brookies 
 </div>
             </div>
@@ -1559,9 +1611,9 @@
     </div>
 
     <!-- TELA DO CARRINHO -->
-    <div id="cart-section" class="cart-section scroll-enabled">
+    <div id="cart-section" class="cart-section scroll-enabled scroll-fix">
         <header class="urbanz-header shadow-lg sticky top-0 z-10">
-            <div class="container mx-auto px-4 py-4 flex items-center justify-between">
+            <div class="container mx-auto px-4 py-3 flex items-center justify-between">
                 <div class="flex items-center gap-4">
                     <button id="back-to-store" class="back-btn">
                         <i class="fas fa-arrow-left"></i>
@@ -1569,7 +1621,7 @@
                     </button>
                     <div class="brand-container">
                         <img src="WhatsApp Image 2025-10-16 at 14.55.25.jpeg" alt="UBZ UrbanZ" class="brand-logo">
-                        <h1 class="text-2xl font-bold brand-text">Meu Carrinho</h1>
+                        <h1 class="text-xl font-bold brand-text">Meu Carrinho</h1>
                     </div>
                 </div>
                 <div class="flex items-center">
@@ -1581,7 +1633,7 @@
             </div>
         </header>
 
-        <main class="container mx-auto px-4 py-8 scroll-enabled">
+        <main class="container mx-auto px-4 py-6 scroll-enabled scroll-fix">
             <div id="cart-content" class="bg-white rounded-xl shadow p-6">
                 <div class="text-center py-10 text-gray-500" id="empty-cart-page">
                     <i class="fas fa-shopping-cart text-6xl mb-4 opacity-30"></i>
@@ -1630,14 +1682,14 @@
     </div>
 
     <!-- PAINEL ADMINISTRATIVO -->
-    <div id="admin-section" class="admin-section scroll-enabled">
+    <div id="admin-section" class="admin-section scroll-enabled scroll-fix">
         <header class="urbanz-header shadow-lg sticky top-0 z-10">
-            <div class="container mx-auto px-4 py-4 flex items-center justify-between flex-wrap gap-3">
+            <div class="container mx-auto px-4 py-3 flex items-center justify-between flex-wrap gap-3">
                 <div class="brand-container">
                     <img src="WhatsApp Image 2025-10-16 at 14.55.25.jpeg" alt="UBZ UrbanZ" class="brand-logo">
                     <div class="flex flex-col">
-                        <h1 class="text-2xl font-bold brand-text">Dona Brookies</h1>
-                        <span class="text-sm brand-subtitle">Painel Administrativo</span>
+                        <h1 class="text-xl font-bold brand-text">Dona Brookies</h1>
+                        <span class="text-xs brand-subtitle">Painel Administrativo</span>
                     </div>
                 </div>
                 <div class="flex items-center gap-4 flex-wrap">
@@ -1653,7 +1705,7 @@
             </div>
         </header>
 
-        <main class="container mx-auto px-4 py-8 scroll-enabled">
+        <main class="container mx-auto px-4 py-6 scroll-enabled scroll-fix">
             <div class="flex mb-6 border-b nav-tabs flex-wrap">
                 <button class="nav-tab px-4 py-3 font-medium active" data-tab="dashboard">
                     <i class="fas fa-chart-pie mr-2"></i>Dashboard
@@ -1679,7 +1731,7 @@
             </div>
 
             <!-- Dashboard Tab -->
-            <div id="tab-dashboard" class="tab-content scroll-enabled">
+            <div id="tab-dashboard" class="tab-content scroll-enabled scroll-fix">
                 <h2 class="text-2xl font-bold mb-6 text-gray-800">Visão Geral</h2>
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 dashboard-cards">
@@ -1742,7 +1794,7 @@
             </div>
 
             <!-- Products Tab -->
-            <div id="tab-products" class="tab-content hidden scroll-enabled">
+            <div id="tab-products" class="tab-content hidden scroll-enabled scroll-fix">
                 <div class="flex justify-between items-center mb-6 flex-wrap gap-3">
                     <h2 class="text-2xl font-bold text-gray-800">Gerenciamento de Produtos</h2>
                     <button id="add-product-btn" class="urbanz-admin-btn hover:bg-blue-700 px-4 py-2 rounded-full shadow flex items-center gap-2">
@@ -1785,7 +1837,7 @@
             </div>
 
             <!-- Categories Tab -->
-            <div id="tab-categories" class="tab-content hidden scroll-enabled">
+            <div id="tab-categories" class="tab-content hidden scroll-enabled scroll-fix">
                 <div class="flex justify-between items-center mb-6 flex-wrap gap-3">
                     <h2 class="text-2xl font-bold text-gray-800">Gerenciamento de Categorias</h2>
                     <button id="add-category-btn" class="urbanz-admin-btn hover:bg-blue-700 px-4 py-2 rounded-full shadow flex items-center gap-2">
@@ -1800,7 +1852,7 @@
             </div>
 
             <!-- Ordering Tab -->
-            <div id="tab-ordering" class="tab-content hidden scroll-enabled">
+            <div id="tab-ordering" class="tab-content hidden scroll-enabled scroll-fix">
                 <div class="flex justify-between items-center mb-6 flex-wrap gap-3">
                     <h2 class="text-2xl font-bold text-gray-800">Ordenação de Produtos</h2>
                     <button id="save-ordering-btn" class="urbanz-admin-btn hover:bg-blue-700 px-4 py-2 rounded-full shadow flex items-center gap-2">
@@ -1824,7 +1876,7 @@
             </div>
 
             <!-- NOVA ABA: Cupons -->
-            <div id="tab-coupons" class="tab-content hidden scroll-enabled">
+            <div id="tab-coupons" class="tab-content hidden scroll-enabled scroll-fix">
                 <div class="flex justify-between items-center mb-6 flex-wrap gap-3">
                     <h2 class="text-2xl font-bold text-gray-800">Gerenciamento de Cupons</h2>
                     <button id="add-coupon-btn" class="urbanz-admin-btn hover:bg-blue-700 px-4 py-2 rounded-full shadow flex items-center gap-2">
@@ -1861,7 +1913,7 @@
             </div>
 
             <!-- NOVA ABA: Notificações -->
-            <div id="tab-notifications" class="tab-content hidden scroll-enabled">
+            <div id="tab-notifications" class="tab-content hidden scroll-enabled scroll-fix">
                 <div class="flex justify-between items-center mb-6 flex-wrap gap-3">
                     <h2 class="text-2xl font-bold text-gray-800">Sistema de Notificações</h2>
                     <div class="flex gap-3">
@@ -4442,7 +4494,7 @@
             if (sortBy === 'price-asc') {
                 filteredProducts.sort((a, b) => a.price - b.price);
             } else if (sortBy === 'price-desc') {
-                filteredProducts.sort((a, b) => b.price - b.price);
+                filteredProducts.sort((a, b) => b.price - a.price);
             } else {
                 // Ordem padrão (display_order)
                 filteredProducts.sort((a, b) => {
