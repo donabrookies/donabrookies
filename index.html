@@ -51,16 +51,13 @@
             width: 100%;
             height: 100%;
             background: linear-gradient(135deg, var(--urbanz-primary) 0%, var(--urbanz-dark) 100%);
-            display: none; /* Inicialmente escondida */
+            display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             z-index: 9999;
             transition: opacity 0.5s ease-out;
-        }
-        
-        .welcome-screen.active {
-            display: flex;
+            /* GARANTIR QUE A TELA DE BOAS-VINDAS SEMPRE APAREÇA PRIMEIRO */
             opacity: 1;
             visibility: visible;
         }
@@ -2048,22 +2045,12 @@
         // ===== FUNÇÃO PARA ESCONDER TELA DE BOAS-VINDAS =====
         function hideWelcomeScreen() {
             if (elements.welcomeScreen) {
-                elements.welcomeScreen.classList.remove('active');
                 elements.welcomeScreen.classList.add('hidden');
                 setTimeout(() => {
                     if (elements.welcomeScreen.parentNode) {
-                        elements.welcomeScreen.style.display = 'none';
+                        elements.welcomeScreen.parentNode.removeChild(elements.welcomeScreen);
                     }
                 }, 500);
-            }
-        }
-
-        // ===== FUNÇÃO PARA MOSTRAR TELA DE BOAS-VINDAS =====
-        function showWelcomeScreen() {
-            if (elements.welcomeScreen) {
-                elements.welcomeScreen.style.display = 'flex';
-                elements.welcomeScreen.classList.add('active');
-                elements.welcomeScreen.classList.remove('hidden');
             }
         }
 
@@ -2512,14 +2499,12 @@
 
         // ===== INICIALIZAÇÃO =====
         async function init() {
-            // CORREÇÃO iOS: Mostrar tela de boas-vindas APENAS se for app
-            if (isStandaloneApp()) {
-                console.log('📱 É um app instalado - Mostrando tela de boas-vindas');
-                showWelcomeScreen();
-            } else {
-                console.log('🌐 É navegador web - Escondendo tela de boas-vindas');
+            // VERIFICAR SE É APP INSTALADO
+            if (!isStandaloneApp()) {
+                // Se não for app, esconder tela de boas-vindas imediatamente
                 hideWelcomeScreen();
             }
+            // Se for app, a tela de boas-vindas permanece até os dados carregarem
             
             await loadData();
             setupRouting();
@@ -3071,7 +3056,7 @@
             if (sortBy === 'price-asc') {
                 filteredProducts.sort((a, b) => a.price - b.price);
             } else if (sortBy === 'price-desc') {
-                filteredProducts.sort((a, b) => b.price - b.price);
+                filteredProducts.sort((a, b) => b.price - a.price);
             } else {
                 // Ordem padrão (display_order)
                 filteredProducts.sort((a, b) => {
