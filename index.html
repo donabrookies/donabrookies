@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#a5784f">
     <meta name="description" content="Dona Brookies - Brownies e cookies feitos com amor e crocância!">
     <title>DonaBrookies</title>
@@ -32,6 +32,15 @@
         body {
             font-family: 'Inter', sans-serif;
             background-color: var(--urbanz-cream);
+            /* PREVENIR ZOOM E COMPORTAMENTOS DE TOQUE INDESEJADOS */
+            touch-action: pan-x pan-y;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -khtml-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
         }
         
         /* Tela de Boas-Vindas - APENAS PARA APP */
@@ -42,7 +51,7 @@
             width: 100%;
             height: 100%;
             background: linear-gradient(135deg, var(--urbanz-primary) 0%, var(--urbanz-dark) 100%);
-            display: flex;
+            display: none; /* Inicialmente escondida */
             flex-direction: column;
             align-items: center;
             justify-content: center;
@@ -50,9 +59,16 @@
             transition: opacity 0.5s ease-out;
         }
         
+        .welcome-screen.active {
+            display: flex;
+            opacity: 1;
+            visibility: visible;
+        }
+        
         .welcome-screen.hidden {
             opacity: 0;
             pointer-events: none;
+            visibility: hidden;
         }
         
         .welcome-logo {
@@ -709,76 +725,6 @@
             line-height: 1.5;
         }
         
-        /* Estilos para cupom */
-        .coupon-section {
-            display: none;
-            transition: all 0.3s ease;
-        }
-
-        .coupon-section.active {
-            display: block;
-        }
-
-        .coupon-input-container {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 10px;
-        }
-
-        .coupon-input {
-            flex: 1;
-            border: 1px solid #d1d5db;
-            border-radius: 8px;
-            padding: 12px 15px;
-            font-size: 16px;
-        }
-
-        .coupon-btn {
-            background: var(--urbanz-primary);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            padding: 12px 20px;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-
-        .coupon-btn:hover {
-            background: var(--urbanz-dark);
-        }
-
-        .coupon-success {
-            background-color: #d1fae5;
-            border: 1px solid #10b981;
-            color: #065f46;
-            padding: 12px;
-            border-radius: 8px;
-            margin-top: 10px;
-            display: none;
-        }
-
-        .coupon-error {
-            background-color: #fee2e2;
-            border: 1px solid #ef4444;
-            color: #991b1b;
-            padding: 12px;
-            border-radius: 8px;
-            margin-top: 10px;
-            display: none;
-        }
-
-        .coupon-applied {
-            background-color: #d1fae5;
-            border: 1px solid #10b981;
-            color: #065f46;
-            padding: 12px;
-            border-radius: 8px;
-            margin-top: 10px;
-            display: flex;
-            justify-content: between;
-            align-items: center;
-        }
-        
         @keyframes fadeIn {
             from { opacity: 0; }
             to { opacity: 1; }
@@ -1069,6 +1015,47 @@
             0% { transform: scale(1); }
             50% { transform: scale(1.05); }
             100% { transform: scale(1); }
+        }
+
+        /* ===== NOVOS ESTILOS PARA PREVENIR ZOOM ===== */
+        
+        /* Prevenir zoom em double tap em iOS Safari */
+        * {
+            -webkit-text-size-adjust: 100%;
+            -moz-text-size-adjust: 100%;
+            -ms-text-size-adjust: 100%;
+        }
+        
+        /* Prevenir seleção de texto */
+        body, input, textarea, select, button {
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+        
+        /* Permitir seleção apenas em campos de entrada */
+        input[type="text"],
+        input[type="number"],
+        input[type="password"],
+        textarea {
+            -webkit-user-select: text;
+            -moz-user-select: text;
+            -ms-user-select: text;
+            user-select: text;
+        }
+        
+        /* Prevenir ações de toque indesejadas */
+        a, button, input, .sabor-option, .quantity-btn, .add-to-cart-btn {
+            -webkit-touch-callout: none;
+            -webkit-tap-highlight-color: rgba(0,0,0,0);
+        }
+        
+        /* Prevenir zoom em inputs no iOS */
+        @media screen and (max-width: 768px) {
+            input, select, textarea {
+                font-size: 16px !important; /* Prevenir zoom no iOS */
+            }
         }
     </style>
 </head>
@@ -1403,9 +1390,6 @@
                 <button class="nav-tab px-4 py-3 font-medium" data-tab="categories">
                     <i class="fas fa-tags mr-2"></i>Categorias
                 </button>
-                <button class="nav-tab px-4 py-3 font-medium" data-tab="coupons">
-                    <i class="fas fa-ticket-alt mr-2"></i>Cupons
-                </button>
                 <button class="nav-tab px-4 py-3 font-medium" data-tab="ordering">
                     <i class="fas fa-sort mr-2"></i>Ordenação
                 </button>
@@ -1436,18 +1420,6 @@
                             </div>
                             <div class="bg-green-100 p-3 rounded-full">
                                 <i class="fas fa-tags text-green-600 text-xl"></i>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="dashboard-card bg-white p-6 rounded-xl shadow">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-sm text-gray-500">Cupons Ativos</p>
-                                <p class="text-2xl font-bold" id="total-coupons">0</p>
-                            </div>
-                            <div class="bg-blue-100 p-3 rounded-full">
-                                <i class="fas fa-ticket-alt text-blue-600 text-xl"></i>
                             </div>
                         </div>
                     </div>
@@ -1528,44 +1500,6 @@
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="categories-list">
                     <!-- Categorias serão inseridas aqui -->
-                </div>
-            </div>
-
-            <!-- Cupons Tab -->
-            <div id="tab-coupons" class="tab-content hidden">
-                <div class="flex justify-between items-center mb-6 flex-wrap gap-3">
-                    <h2 class="text-2xl font-bold text-gray-800">Gerenciamento de Cupons</h2>
-                    <button id="add-coupon-btn" class="urbanz-admin-btn hover:bg-blue-700 px-4 py-2 rounded-full shadow flex items-center gap-2">
-                        <i class="fas fa-plus"></i>
-                        <span>Adicionar Cupom</span>
-                    </button>
-                </div>
-                
-                <div class="bg-white rounded-xl shadow overflow-hidden">
-                    <div class="p-4 border-b">
-                        <div class="relative w-full md:w-64">
-                            <input type="text" id="coupon-search" placeholder="Buscar cupons..." class="focus-ring border rounded-full px-4 py-2 text-sm w-full focus:outline-none focus:ring-2">
-                            <i class="fas fa-search absolute right-3 top-3 text-gray-400"></i>
-                        </div>
-                    </div>
-                    
-                    <div class="overflow-x-auto admin-table">
-                        <table class="w-full">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th class="py-3 px-4 text-left text-sm font-medium text-gray-500">Código</th>
-                                    <th class="py-3 px-4 text-left text-sm font-medium text-gray-500">Descrição</th>
-                                    <th class="py-3 px-4 text-left text-sm font-medium text-gray-500">Tipo</th>
-                                    <th class="py-3 px-4 text-left text-sm font-medium text-gray-500">Status</th>
-                                    <th class="py-3 px-4 text-left text-sm font-medium text-gray-500">Criado em</th>
-                                    <th class="py-3 px-4 text-left text-sm font-medium text-gray-500">Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y" id="coupons-list">
-                                <!-- Cupons serão inseridos aqui -->
-                            </tbody>
-                        </table>
-                    </div>
                 </div>
             </div>
 
@@ -1702,54 +1636,6 @@
         </div>
     </div>
 
-    <!-- Modal Adicionar Cupom -->
-    <div id="add-coupon-modal" class="fixed inset-0 flex items-center justify-center z-50 hidden">
-        <div class="modal-overlay absolute inset-0"></div>
-        
-        <div class="modal-content bg-white rounded-xl w-full max-w-md mx-4 z-10 shadow-2xl">
-            <div class="p-6 border-b">
-                <h3 class="text-xl font-semibold text-gray-800">Adicionar Novo Cupom</h3>
-            </div>
-            
-            <form id="coupon-form" class="p-6 space-y-4">
-                <div>
-                    <label class="block text-sm font-medium mb-1 text-gray-700">Código do Cupom *</label>
-                    <input type="text" id="coupon-code" required class="focus-ring w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2" placeholder="Ex: FREEGRATIS">
-                    <p class="text-xs text-gray-500 mt-1">Use letras maiúsculas e números, sem espaços</p>
-                </div>
-                
-                <div>
-                    <label class="block text-sm font-medium mb-1 text-gray-700">Descrição</label>
-                    <textarea id="coupon-description" rows="3" class="focus-ring w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2" placeholder="Descreva este cupom"></textarea>
-                </div>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium mb-1 text-gray-700">Tipo</label>
-                        <select id="coupon-type" class="focus-ring w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2">
-                            <option value="free_shipping">Frete Grátis</option>
-                        </select>
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium mb-1 text-gray-700">Status</label>
-                        <select id="coupon-status" class="focus-ring w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2">
-                            <option value="active">Ativo</option>
-                            <option value="inactive">Inativo</option>
-                        </select>
-                    </div>
-                </div>
-                
-                <div class="flex gap-3 pt-4 border-t">
-                    <button type="button" id="cancel-coupon" class="flex-1 border border-gray-300 text-gray-700 py-2 rounded-lg">Cancelar</button>
-                    <button type="submit" class="flex-1 btn-primary py-2 rounded-lg">
-                        Salvar Cupom
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
     <!-- Modal de Finalização de Compra -->
     <div id="checkout-modal" class="fixed inset-0 flex items-center justify-center z-50 hidden">
         <div class="modal-overlay absolute inset-0" id="checkout-overlay"></div>
@@ -1795,32 +1681,6 @@
                         </div>
                         <div>
                             <input type="text" id="complement" placeholder="Complemento (opcional)" class="focus-ring w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2">
-                        </div>
-                    </div>
-
-                    <!-- Seção de Cupom (APENAS PARA APP) -->
-                    <div id="coupon-section" class="coupon-section mt-4">
-                        <label class="block text-sm font-medium mb-2 text-gray-700">Cupom de desconto</label>
-                        <div class="coupon-input-container">
-                            <input type="text" id="coupon-input" placeholder="Digite o código do cupom" class="coupon-input focus-ring">
-                            <button type="button" id="apply-coupon" class="coupon-btn">Aplicar</button>
-                        </div>
-                        <div id="coupon-success" class="coupon-success">
-                            <i class="fas fa-check-circle mr-2"></i>
-                            <span>Cupom aplicado com sucesso! Frete grátis ativado.</span>
-                        </div>
-                        <div id="coupon-error" class="coupon-error">
-                            <i class="fas fa-times-circle mr-2"></i>
-                            <span id="coupon-error-message">Cupom inválido ou expirado.</span>
-                        </div>
-                        <div id="coupon-applied" class="coupon-applied hidden">
-                            <div>
-                                <i class="fas fa-check-circle mr-2"></i>
-                                <span id="coupon-applied-text">Cupom aplicado - Frete grátis</span>
-                            </div>
-                            <button type="button" id="remove-coupon" class="text-red-600 hover:text-red-800">
-                                <i class="fas fa-times"></i>
-                            </button>
                         </div>
                     </div>
                 </div>
@@ -1888,10 +1748,6 @@
                     <div id="delivery-fee-info" class="text-sm text-gray-600 mt-2 hidden">
                         <i class="fas fa-info-circle mr-1"></i>
                         <span>Taxa de entrega: R$ 3,00</span>
-                    </div>
-                    <div id="coupon-discount-info" class="text-sm text-green-600 mt-2 hidden">
-                        <i class="fas fa-ticket-alt mr-1"></i>
-                        <span>Cupom aplicado: Frete grátis</span>
                     </div>
                 </div>
                 
@@ -2035,11 +1891,9 @@
         let filteredProducts = [];
         let products = [];
         let categories = [];
-        let coupons = [];
         let currentView = 'store';
         let adminCurrentTab = 'dashboard';
         let saborCounter = 0;
-        let appliedCoupon = null;
 
         // ===== ELEMENTOS DO DOM =====
         const elements = {
@@ -2102,22 +1956,10 @@
             complement: document.getElementById('complement'),
             paymentMethod: document.getElementById('payment-method'),
             deliveryFeeInfo: document.getElementById('delivery-fee-info'),
-            couponDiscountInfo: document.getElementById('coupon-discount-info'),
             trocoFields: document.getElementById('troco-fields'),
             trocoValueContainer: document.getElementById('troco-value-container'),
             trocoValue: document.getElementById('troco-value'),
             pixInfo: document.getElementById('pix-info'),
-            
-            // Cupons no checkout
-            couponSection: document.getElementById('coupon-section'),
-            couponInput: document.getElementById('coupon-input'),
-            applyCoupon: document.getElementById('apply-coupon'),
-            couponSuccess: document.getElementById('coupon-success'),
-            couponError: document.getElementById('coupon-error'),
-            couponErrorMessage: document.getElementById('coupon-error-message'),
-            couponApplied: document.getElementById('coupon-applied'),
-            couponAppliedText: document.getElementById('coupon-applied-text'),
-            removeCoupon: document.getElementById('remove-coupon'),
             
             // Toast
             toastNotification: document.getElementById('toast-notification'),
@@ -2136,7 +1978,6 @@
             tabContents: document.querySelectorAll('.tab-content'),
             totalProducts: document.getElementById('total-products'),
             totalCategories: document.getElementById('total-categories'),
-            totalCoupons: document.getElementById('total-coupons'),
             lowStockItems: document.getElementById('low-stock-items'),
             lowStockList: document.getElementById('low-stock-list'),
             addProductBtn: document.getElementById('add-product-btn'),
@@ -2146,11 +1987,6 @@
             addCategoryBtn: document.getElementById('add-category-btn'),
             categoriesList: document.getElementById('categories-list'),
             
-            // Cupons admin
-            addCouponBtn: document.getElementById('add-coupon-btn'),
-            couponSearch: document.getElementById('coupon-search'),
-            couponsList: document.getElementById('coupons-list'),
-            
             // Ordenação
             saveOrderingBtn: document.getElementById('save-ordering-btn'),
             orderingProductsList: document.getElementById('ordering-products-list'),
@@ -2158,10 +1994,8 @@
             // Modais
             addProductModal: document.getElementById('add-product-modal'),
             addCategoryModal: document.getElementById('add-category-modal'),
-            addCouponModal: document.getElementById('add-coupon-modal'),
             productForm: document.getElementById('product-form'),
             categoryForm: document.getElementById('category-form'),
-            couponForm: document.getElementById('coupon-form'),
             productId: document.getElementById('product-id'),
             productName: document.getElementById('product-name'),
             productCategory: document.getElementById('product-category'),
@@ -2172,14 +2006,9 @@
             addSaborBtn: document.getElementById('add-sabor-btn'),
             cancelProduct: document.getElementById('cancel-product'),
             cancelCategory: document.getElementById('cancel-category'),
-            cancelCoupon: document.getElementById('cancel-coupon'),
             categoryName: document.getElementById('category-name'),
             categoryId: document.getElementById('category-id'),
-            categoryDescription: document.getElementById('category-description'),
-            couponCode: document.getElementById('coupon-code'),
-            couponDescription: document.getElementById('coupon-description'),
-            couponType: document.getElementById('coupon-type'),
-            couponStatus: document.getElementById('coupon-status')
+            categoryDescription: document.getElementById('category-description')
         };
 
         // ===== FUNÇÕES DE NOTIFICAÇÃO =====
@@ -2219,12 +2048,22 @@
         // ===== FUNÇÃO PARA ESCONDER TELA DE BOAS-VINDAS =====
         function hideWelcomeScreen() {
             if (elements.welcomeScreen) {
+                elements.welcomeScreen.classList.remove('active');
                 elements.welcomeScreen.classList.add('hidden');
                 setTimeout(() => {
                     if (elements.welcomeScreen.parentNode) {
-                        elements.welcomeScreen.parentNode.removeChild(elements.welcomeScreen);
+                        elements.welcomeScreen.style.display = 'none';
                     }
                 }, 500);
+            }
+        }
+
+        // ===== FUNÇÃO PARA MOSTRAR TELA DE BOAS-VINDAS =====
+        function showWelcomeScreen() {
+            if (elements.welcomeScreen) {
+                elements.welcomeScreen.style.display = 'flex';
+                elements.welcomeScreen.classList.add('active');
+                elements.welcomeScreen.classList.remove('hidden');
             }
         }
 
@@ -2451,11 +2290,6 @@
                     return cat;
                 }).filter(cat => cat && cat.id);
                 
-                // Carregar cupons
-                const couponsResponse = await fetch(`${API_BASE_URL}/api/coupons`);
-                const couponsData = await couponsResponse.json();
-                coupons = couponsData.coupons || [];
-                
                 if (categories.length === 0) {
                     categories = [
                         {
@@ -2540,16 +2374,6 @@
                         id: 'short',
                         name: 'Shorts',
                         description: 'Shorts para o dia a dia e prática esportiva'
-                    }
-                ];
-                
-                coupons = [
-                    {
-                        id: 1,
-                        code: "APP10",
-                        description: "Cupom para app - Frete grátis",
-                        status: "active",
-                        type: "free_shipping"
                     }
                 ];
                 
@@ -2675,7 +2499,6 @@
             updateAdminDashboard();
             renderAdminProducts();
             renderCategories();
-            renderCoupons();
             updateCategorySelects();
             renderOrderingProducts();
         }
@@ -2689,12 +2512,14 @@
 
         // ===== INICIALIZAÇÃO =====
         async function init() {
-            // VERIFICAR SE É APP INSTALADO
-            if (!isStandaloneApp()) {
-                // Se não for app, esconder tela de boas-vindas imediatamente
+            // CORREÇÃO iOS: Mostrar tela de boas-vindas APENAS se for app
+            if (isStandaloneApp()) {
+                console.log('📱 É um app instalado - Mostrando tela de boas-vindas');
+                showWelcomeScreen();
+            } else {
+                console.log('🌐 É navegador web - Escondendo tela de boas-vindas');
                 hideWelcomeScreen();
             }
-            // Se for app, a tela de boas-vindas permanece até os dados carregarem
             
             await loadData();
             setupRouting();
@@ -2752,10 +2577,6 @@
                 radio.addEventListener('change', toggleTrocoValue);
             });
             
-            // Event listeners para cupons
-            elements.applyCoupon.addEventListener('click', applyCoupon);
-            elements.removeCoupon.addEventListener('click', removeCoupon);
-            
             // Event listeners para mobile
             elements.mobileFilterBtn.addEventListener('click', openMobileFilterMenu);
             elements.closeFilterMenu.addEventListener('click', closeMobileFilterMenu);
@@ -2778,12 +2599,6 @@
             elements.addCategoryBtn.addEventListener('click', openAddCategoryModal);
             elements.cancelCategory.addEventListener('click', closeAddCategoryModal);
             elements.categoryForm.addEventListener('submit', handleCategorySubmit);
-            
-            // Event listeners para cupons
-            elements.addCouponBtn.addEventListener('click', openAddCouponModal);
-            elements.cancelCoupon.addEventListener('click', closeAddCouponModal);
-            elements.couponForm.addEventListener('submit', handleCouponSubmit);
-            elements.couponSearch.addEventListener('input', filterCoupons);
             
             // Event listeners para ordenação
             elements.saveOrderingBtn.addEventListener('click', saveProductOrdering);
@@ -2826,7 +2641,6 @@
             const deliveryFields = elements.deliveryFields;
             const storeAddress = elements.storeAddress;
             const deliveryFeeInfo = elements.deliveryFeeInfo;
-            const couponSection = elements.couponSection;
             
             // Atualizar seleção visual dos botões
             document.querySelectorAll('.delivery-option').forEach(option => {
@@ -2840,12 +2654,6 @@
                 storeAddress.classList.remove('active');
                 storeAddress.style.display = 'none';
                 deliveryFeeInfo.classList.remove('hidden');
-                
-                // Mostrar seção de cupom apenas para app
-                if (isStandaloneApp()) {
-                    couponSection.classList.add('active');
-                    couponSection.style.display = 'block';
-                }
                 
                 // Tornar campos obrigatórios
                 elements.street.required = true;
@@ -2861,8 +2669,6 @@
                 storeAddress.classList.add('active');
                 storeAddress.style.display = 'block';
                 deliveryFeeInfo.classList.add('hidden');
-                couponSection.classList.remove('active');
-                couponSection.style.display = 'none';
                 
                 // Remover obrigatoriedade dos campos
                 elements.street.required = false;
@@ -2874,9 +2680,6 @@
                 elements.number.value = '';
                 elements.neighborhood.value = '';
                 elements.complement.value = '';
-                
-                // Remover cupom aplicado
-                removeCoupon();
                 
                 // Atualizar total sem taxa de entrega
                 updateModalTotal(false);
@@ -2924,89 +2727,8 @@
 
         function updateModalTotal(includeDeliveryFee = false) {
             const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-            let finalTotal = total;
-            
-            if (includeDeliveryFee && !appliedCoupon) {
-                finalTotal = total + DELIVERY_FEE;
-            }
-            
+            const finalTotal = includeDeliveryFee ? total + DELIVERY_FEE : total;
             elements.modalTotal.textContent = `R$ ${finalTotal.toFixed(2).replace('.', ',')}`;
-            
-            // Atualizar informações de entrega e cupom
-            if (includeDeliveryFee) {
-                elements.deliveryFeeInfo.classList.remove('hidden');
-                if (appliedCoupon) {
-                    elements.couponDiscountInfo.classList.remove('hidden');
-                    elements.deliveryFeeInfo.classList.add('hidden');
-                } else {
-                    elements.couponDiscountInfo.classList.add('hidden');
-                }
-            } else {
-                elements.deliveryFeeInfo.classList.add('hidden');
-                elements.couponDiscountInfo.classList.add('hidden');
-            }
-        }
-
-        // ===== FUNÇÕES DE CUPOM =====
-        async function applyCoupon() {
-            const couponCode = elements.couponInput.value.trim().toUpperCase();
-            
-            if (!couponCode) {
-                showToast('Por favor, digite um código de cupom.', 'warning');
-                return;
-            }
-            
-            try {
-                // Buscar cupons válidos
-                const activeCoupons = coupons.filter(coupon => 
-                    coupon.status === 'active' && coupon.code === couponCode
-                );
-                
-                if (activeCoupons.length > 0) {
-                    const coupon = activeCoupons[0];
-                    appliedCoupon = coupon;
-                    
-                    // Mostrar sucesso
-                    elements.couponSuccess.style.display = 'block';
-                    elements.couponError.style.display = 'none';
-                    elements.couponApplied.classList.remove('hidden');
-                    elements.couponAppliedText.textContent = `Cupom ${coupon.code} aplicado - Frete grátis`;
-                    
-                    // Atualizar total
-                    updateModalTotal(true);
-                    
-                    showToast('Cupom aplicado com sucesso! Frete grátis ativado.', 'success');
-                } else {
-                    // Cupom inválido
-                    appliedCoupon = null;
-                    elements.couponSuccess.style.display = 'none';
-                    elements.couponError.style.display = 'block';
-                    elements.couponErrorMessage.textContent = 'Cupom inválido ou expirado.';
-                    elements.couponApplied.classList.add('hidden');
-                    
-                    // Atualizar total
-                    updateModalTotal(true);
-                    
-                    showToast('Cupom inválido ou expirado.', 'error');
-                }
-            } catch (error) {
-                console.error('Erro ao aplicar cupom:', error);
-                showToast('Erro ao verificar cupom. Tente novamente.', 'error');
-            }
-        }
-
-        function removeCoupon() {
-            appliedCoupon = null;
-            elements.couponInput.value = '';
-            elements.couponSuccess.style.display = 'none';
-            elements.couponError.style.display = 'none';
-            elements.couponApplied.classList.add('hidden');
-            
-            // Atualizar total
-            const deliveryType = document.querySelector('input[name="delivery-type"]:checked')?.value;
-            updateModalTotal(deliveryType === 'entrega');
-            
-            showToast('Cupom removido.', 'info');
         }
 
         // ===== FUNÇÕES DA LOJA =====
@@ -3349,7 +3071,7 @@
             if (sortBy === 'price-asc') {
                 filteredProducts.sort((a, b) => a.price - b.price);
             } else if (sortBy === 'price-desc') {
-                filteredProducts.sort((a, b) => b.price - a.price);
+                filteredProducts.sort((a, b) => b.price - b.price);
             } else {
                 // Ordem padrão (display_order)
                 filteredProducts.sort((a, b) => {
@@ -3593,19 +3315,11 @@
             elements.storeAddress.classList.remove('active');
             elements.storeAddress.style.display = 'none';
             elements.deliveryFeeInfo.classList.add('hidden');
-            elements.couponDiscountInfo.classList.add('hidden');
             elements.trocoFields.classList.remove('active');
             elements.trocoFields.style.display = 'none';
             elements.pixInfo.classList.remove('active');
             elements.pixInfo.style.display = 'none';
             elements.trocoValueContainer.classList.add('hidden');
-            elements.couponSection.classList.remove('active');
-            elements.couponSection.style.display = 'none';
-            elements.couponSuccess.style.display = 'none';
-            elements.couponError.style.display = 'none';
-            elements.couponApplied.classList.add('hidden');
-            elements.couponInput.value = '';
-            appliedCoupon = null;
             document.querySelectorAll('.delivery-option').forEach(option => {
                 option.classList.remove('selected');
             });
@@ -3633,7 +3347,6 @@
             
             let addressData = {};
             let total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-            let deliveryFee = 0;
             
             if (deliveryType === 'entrega') {
                 const street = elements.street.value;
@@ -3653,11 +3366,8 @@
                     complement
                 };
                 
-                // Adicionar taxa de entrega apenas se não há cupom aplicado
-                if (!appliedCoupon) {
-                    deliveryFee = DELIVERY_FEE;
-                    total += deliveryFee;
-                }
+                // Adicionar taxa de entrega ao total
+                total += DELIVERY_FEE;
             }
             
             // Verificar se precisa de troco (apenas para pagamento em dinheiro)
@@ -3693,11 +3403,7 @@
                 if (addressData.complement) {
                     message += `Complemento: ${addressData.complement}%0A`;
                 }
-                if (appliedCoupon) {
-                    message += `Cupom aplicado: ${appliedCoupon.code} - Frete grátis%0A`;
-                } else {
-                    message += `Taxa de entrega: R$ ${DELIVERY_FEE.toFixed(2)}%0A`;
-                }
+                message += `Taxa de entrega: R$ ${DELIVERY_FEE.toFixed(2)}%0A`;
             } else {
                 message += `Tipo: Retirada na loja%0A`;
                 message += `Endereço da loja: Rua Valdemar Araújo Sampaio, nº 106, Rua do bar do Nego %0A`;
@@ -3732,8 +3438,7 @@
                         deliveryType: deliveryType,
                         address: addressData,
                         paymentMethod: paymentMethod,
-                        troco: trocoInfo,
-                        coupon: appliedCoupon ? appliedCoupon.code : null
+                        troco: trocoInfo
                     }
                 };
                 
@@ -3820,7 +3525,6 @@
         function updateAdminDashboard() {
             elements.totalProducts.textContent = products.length;
             elements.totalCategories.textContent = categories.length;
-            elements.totalCoupons.textContent = coupons.filter(c => c.status === 'active').length;
             
             // Calcular itens com estoque baixo
             const lowStockCount = products.reduce((count, product) => {
@@ -4105,126 +3809,6 @@
             });
         }
 
-        function renderCoupons() {
-            elements.couponsList.innerHTML = '';
-            
-            if (coupons.length === 0) {
-                elements.couponsList.innerHTML = `
-                    <tr>
-                        <td colspan="6" class="py-4 px-4 text-center text-gray-500">
-                            Nenhum cupom cadastrado.
-                        </td>
-                    </tr>
-                `;
-                return;
-            }
-            
-            coupons.forEach(coupon => {
-                const statusClass = coupon.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800';
-                const statusText = coupon.status === 'active' ? 'Ativo' : 'Inativo';
-                const typeText = coupon.type === 'free_shipping' ? 'Frete Grátis' : coupon.type;
-                
-                const couponRow = document.createElement('tr');
-                couponRow.innerHTML = `
-                    <td class="py-4 px-4">
-                        <div class="font-medium">${coupon.code}</div>
-                    </td>
-                    <td class="py-4 px-4">
-                        <div class="text-sm text-gray-500">${coupon.description || 'Sem descrição'}</div>
-                    </td>
-                    <td class="py-4 px-4">
-                        <span class="text-sm">${typeText}</span>
-                    </td>
-                    <td class="py-4 px-4">
-                        <span class="${statusClass} text-xs px-2 py-1 rounded-full">${statusText}</span>
-                    </td>
-                    <td class="py-4 px-4">
-                        <div class="text-sm text-gray-500">${new Date(coupon.created_at).toLocaleDateString('pt-BR')}</div>
-                    </td>
-                    <td class="py-4 px-4">
-                        <div class="flex gap-2">
-                            <button class="text-red-600 hover:text-red-800 delete-coupon" data-id="${coupon.id}" style="min-width: 44px; min-height: 44px; padding: 8px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: manipulation;">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                    </td>
-                `;
-                
-                elements.couponsList.appendChild(couponRow);
-            });
-            
-            document.querySelectorAll('.delete-coupon').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const couponId = parseInt(btn.dataset.id);
-                    deleteCoupon(couponId);
-                });
-            });
-        }
-
-        function filterCoupons() {
-            const searchTerm = elements.couponSearch.value.toLowerCase();
-            
-            const filteredCoupons = coupons.filter(coupon => 
-                coupon.code.toLowerCase().includes(searchTerm) ||
-                (coupon.description && coupon.description.toLowerCase().includes(searchTerm))
-            );
-            
-            // Renderizar cupons filtrados
-            elements.couponsList.innerHTML = '';
-            
-            if (filteredCoupons.length === 0) {
-                elements.couponsList.innerHTML = `
-                    <tr>
-                        <td colspan="6" class="py-4 px-4 text-center text-gray-500">
-                            Nenhum cupom encontrado.
-                        </td>
-                    </tr>
-                `;
-                return;
-            }
-            
-            filteredCoupons.forEach(coupon => {
-                const statusClass = coupon.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800';
-                const statusText = coupon.status === 'active' ? 'Ativo' : 'Inativo';
-                const typeText = coupon.type === 'free_shipping' ? 'Frete Grátis' : coupon.type;
-                
-                const couponRow = document.createElement('tr');
-                couponRow.innerHTML = `
-                    <td class="py-4 px-4">
-                        <div class="font-medium">${coupon.code}</div>
-                    </td>
-                    <td class="py-4 px-4">
-                        <div class="text-sm text-gray-500">${coupon.description || 'Sem descrição'}</div>
-                    </td>
-                    <td class="py-4 px-4">
-                        <span class="text-sm">${typeText}</span>
-                    </td>
-                    <td class="py-4 px-4">
-                        <span class="${statusClass} text-xs px-2 py-1 rounded-full">${statusText}</span>
-                    </td>
-                    <td class="py-4 px-4">
-                        <div class="text-sm text-gray-500">${new Date(coupon.created_at).toLocaleDateString('pt-BR')}</div>
-                    </td>
-                    <td class="py-4 px-4">
-                        <div class="flex gap-2">
-                            <button class="text-red-600 hover:text-red-800 delete-coupon" data-id="${coupon.id}" style="min-width: 44px; min-height: 44px; padding: 8px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: manipulation;">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                    </td>
-                `;
-                
-                elements.couponsList.appendChild(couponRow);
-            });
-            
-            document.querySelectorAll('.delete-coupon').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const couponId = parseInt(btn.dataset.id);
-                    deleteCoupon(couponId);
-                });
-            });
-        }
-
         function renderOrderingProducts() {
             elements.orderingProductsList.innerHTML = '';
             
@@ -4373,17 +3957,6 @@
 
         function closeAddCategoryModal() {
             elements.addCategoryModal.classList.add('hidden');
-            document.body.style.overflow = 'auto';
-        }
-
-        function openAddCouponModal() {
-            elements.couponForm.reset();
-            elements.addCouponModal.classList.remove('hidden');
-            document.body.style.overflow = 'hidden';
-        }
-
-        function closeAddCouponModal() {
-            elements.addCouponModal.classList.add('hidden');
             document.body.style.overflow = 'auto';
         }
 
@@ -4596,76 +4169,6 @@
             }
         }
 
-        async function handleCouponSubmit(e) {
-            e.preventDefault();
-            
-            const couponCode = elements.couponCode.value.trim().toUpperCase();
-            const couponDescription = elements.couponDescription.value;
-            const couponType = elements.couponType.value;
-            const couponStatus = elements.couponStatus.value;
-            
-            if (!couponCode) {
-                showToast('Por favor, preencha o código do cupom.', 'warning');
-                return;
-            }
-            
-            if (coupons.find(c => c.code === couponCode)) {
-                showToast('Já existe um cupom com este código.', 'warning');
-                return;
-            }
-            
-            // Mostrar loading
-            const submitBtn = e.target.querySelector('button[type="submit"]');
-            const originalText = submitBtn.textContent;
-            submitBtn.textContent = 'Salvando...';
-            submitBtn.disabled = true;
-            
-            try {
-                const newCoupon = {
-                    code: couponCode,
-                    description: couponDescription,
-                    type: couponType,
-                    status: couponStatus,
-                    created_at: new Date().toISOString()
-                };
-                
-                // Usar o endpoint para adicionar cupom
-                const response = await fetch(`${API_BASE_URL}/api/coupons/add`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${authToken}`
-                    },
-                    body: JSON.stringify({ coupon: newCoupon }),
-                    signal: AbortSignal.timeout(15000)
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    coupons.push(newCoupon);
-                    renderCoupons();
-                    updateAdminDashboard();
-                    closeAddCouponModal();
-                    
-                    showToast(`Cupom "${couponCode}" adicionado com sucesso!`, 'success');
-                } else {
-                    throw new Error(data.error || 'Erro desconhecido');
-                }
-            } catch (error) {
-                console.error('Erro ao adicionar cupom:', error);
-                showToast(`Erro ao adicionar cupom: ${error.message}`, 'error');
-            } finally {
-                // Restaurar botão
-                submitBtn.textContent = originalText;
-                submitBtn.disabled = false;
-            }
-        }
-
         async function deleteProduct(productId) {
             if (!confirm('Tem certeza que deseja excluir este produto?')) return;
             
@@ -4744,51 +4247,6 @@
             }
         }
 
-        async function deleteCoupon(couponId) {
-            if (!confirm('Tem certeza que deseja excluir este cupom?')) return;
-            
-            if (!checkAuth()) {
-                showToast('Não autorizado. Faça login novamente.', 'error');
-                return;
-            }
-            
-            try {
-                const response = await fetch(`${API_BASE_URL}/api/coupons/delete`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${authToken}`
-                    },
-                    body: JSON.stringify({ couponId: couponId }),
-                    signal: AbortSignal.timeout(15000)
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    // Remover cupom localmente
-                    const index = coupons.findIndex(c => c.id === couponId);
-                    if (index !== -1) {
-                        coupons.splice(index, 1);
-                    }
-                    
-                    renderCoupons();
-                    updateAdminDashboard();
-                    
-                    showToast('Cupom excluído com sucesso!', 'success');
-                } else {
-                    throw new Error(data.error || 'Erro desconhecido');
-                }
-            } catch (error) {
-                console.error('Erro ao excluir cupom:', error);
-                showToast(`Erro ao excluir cupom: ${error.message}`, 'error');
-            }
-        }
-
         // ===== INICIALIZAR APLICAÇÃO =====
         init();
     </script>
@@ -4806,6 +4264,53 @@
                         console.log('Falha ao registrar Service Worker:', error);
                     });
             });
+        }
+
+        // ===== PREVENIR ZOOM E COMPORTAMENTOS INDESEJADOS =====
+        document.addEventListener('DOMContentLoaded', function() {
+            // Prevenir zoom com double tap
+            let lastTouchEnd = 0;
+            document.addEventListener('touchend', function (event) {
+                const now = (new Date()).getTime();
+                if (now - lastTouchEnd <= 300) {
+                    event.preventDefault();
+                }
+                lastTouchEnd = now;
+            }, false);
+
+            // Prevenir zoom com gesto de pinch
+            document.addEventListener('gesturestart', function (e) {
+                e.preventDefault();
+            });
+            document.addEventListener('gesturechange', function (e) {
+                e.preventDefault();
+            });
+            document.addEventListener('gestureend', function (e) {
+                e.preventDefault();
+            });
+
+            // Prevenir seleção de texto em elementos interativos
+            const interactiveElements = document.querySelectorAll('button, .sabor-option, .quantity-btn, .add-to-cart-btn, .nav-tab, .product-order-handle');
+            interactiveElements.forEach(el => {
+                el.style.webkitUserSelect = 'none';
+                el.style.mozUserSelect = 'none';
+                el.style.msUserSelect = 'none';
+                el.style.userSelect = 'none';
+                el.style.webkitTapHighlightColor = 'transparent';
+            });
+        });
+
+        // Prevenir comportamento de pull-to-refresh em mobile
+        document.addEventListener('touchmove', function (e) {
+            if (e.scale !== 1) { 
+                e.preventDefault(); 
+            }
+        }, { passive: false });
+
+        // Garantir que a viewport não permita zoom
+        const viewport = document.querySelector('meta[name="viewport"]');
+        if (viewport) {
+            viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
         }
     </script>
 </body>
