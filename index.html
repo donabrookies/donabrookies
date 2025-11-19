@@ -1409,6 +1409,10 @@
                 <button class="nav-tab px-4 py-3 font-medium" data-tab="ordering">
                     <i class="fas fa-sort mr-2"></i>Ordenação
                 </button>
+                <!-- NOVA ABA: Histórico de Vendas -->
+                <button class="nav-tab px-4 py-3 font-medium" data-tab="sales-history">
+                    <i class="fas fa-chart-line mr-2"></i>Histórico de Vendas
+                </button>
             </div>
 
             <!-- Dashboard Tab -->
@@ -1589,6 +1593,80 @@
                     
                     <div id="ordering-products-list" class="divide-y">
                         <!-- Produtos para ordenação serão inseridos aqui -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- NOVA ABA: Histórico de Vendas -->
+            <div id="tab-sales-history" class="tab-content hidden">
+                <div class="flex justify-between items-center mb-6 flex-wrap gap-3">
+                    <h2 class="text-2xl font-bold text-gray-800">Histórico de Vendas</h2>
+                    <div class="flex gap-3">
+                        <button id="reset-sales-btn" class="bg-red-600 text-white px-4 py-2 rounded-full shadow flex items-center gap-2 hover:bg-red-700">
+                            <i class="fas fa-trash"></i>
+                            <span>Zerar Vendas da Semana</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow overflow-hidden mb-6">
+                    <div class="p-4 border-b">
+                        <h3 class="font-semibold text-lg">Resumo da Semana</h3>
+                    </div>
+                    <div class="p-6">
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                            <div class="bg-blue-50 p-4 rounded-lg">
+                                <p class="text-sm text-blue-600">Segunda-feira</p>
+                                <p class="text-2xl font-bold text-blue-800" id="monday-total">R$ 0,00</p>
+                            </div>
+                            <div class="bg-green-50 p-4 rounded-lg">
+                                <p class="text-sm text-green-600">Terça-feira</p>
+                                <p class="text-2xl font-bold text-green-800" id="tuesday-total">R$ 0,00</p>
+                            </div>
+                            <div class="bg-yellow-50 p-4 rounded-lg">
+                                <p class="text-sm text-yellow-600">Quarta-feira</p>
+                                <p class="text-2xl font-bold text-yellow-800" id="wednesday-total">R$ 0,00</p>
+                            </div>
+                            <div class="bg-purple-50 p-4 rounded-lg">
+                                <p class="text-sm text-purple-600">Quinta-feira</p>
+                                <p class="text-2xl font-bold text-purple-800" id="thursday-total">R$ 0,00</p>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="bg-red-50 p-4 rounded-lg">
+                                <p class="text-sm text-red-600">Sexta-feira</p>
+                                <p class="text-2xl font-bold text-red-800" id="friday-total">R$ 0,00</p>
+                            </div>
+                            <div class="bg-indigo-50 p-4 rounded-lg">
+                                <p class="text-sm text-indigo-600">Sábado</p>
+                                <p class="text-2xl font-bold text-indigo-800" id="saturday-total">R$ 0,00</p>
+                            </div>
+                            <div class="bg-pink-50 p-4 rounded-lg">
+                                <p class="text-sm text-pink-600">Domingo</p>
+                                <p class="text-2xl font-bold text-pink-800" id="sunday-total">R$ 0,00</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow overflow-hidden">
+                    <div class="p-4 border-b">
+                        <h3 class="font-semibold text-lg">Detalhes das Vendas</h3>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="py-3 px-4 text-left text-sm font-medium text-gray-500">Data</th>
+                                    <th class="py-3 px-4 text-left text-sm font-medium text-gray-500">Produtos Vendidos</th>
+                                    <th class="py-3 px-4 text-left text-sm font-medium text-gray-500">Quantidade Total</th>
+                                    <th class="py-3 px-4 text-left text-sm font-medium text-gray-500">Valor Total</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y" id="sales-history-list">
+                                <!-- Histórico de vendas será inserido aqui -->
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
@@ -2036,6 +2114,7 @@
         let products = [];
         let categories = [];
         let coupons = [];
+        let salesHistory = [];
         let currentView = 'store';
         let adminCurrentTab = 'dashboard';
         let saborCounter = 0;
@@ -2154,6 +2233,17 @@
             // Ordenação
             saveOrderingBtn: document.getElementById('save-ordering-btn'),
             orderingProductsList: document.getElementById('ordering-products-list'),
+            
+            // Histórico de Vendas
+            resetSalesBtn: document.getElementById('reset-sales-btn'),
+            salesHistoryList: document.getElementById('sales-history-list'),
+            mondayTotal: document.getElementById('monday-total'),
+            tuesdayTotal: document.getElementById('tuesday-total'),
+            wednesdayTotal: document.getElementById('wednesday-total'),
+            thursdayTotal: document.getElementById('thursday-total'),
+            fridayTotal: document.getElementById('friday-total'),
+            saturdayTotal: document.getElementById('saturday-total'),
+            sundayTotal: document.getElementById('sunday-total'),
             
             // Modais
             addProductModal: document.getElementById('add-product-modal'),
@@ -2456,6 +2546,9 @@
                 const couponsData = await couponsResponse.json();
                 coupons = couponsData.coupons || [];
                 
+                // Carregar histórico de vendas
+                await loadSalesHistory();
+                
                 if (categories.length === 0) {
                     categories = [
                         {
@@ -2557,6 +2650,159 @@
                 
                 // ESCONDER TELA DE BOAS-VINDAS MESMO COM ERRO
                 hideWelcomeScreen();
+            }
+        }
+
+        // ===== FUNÇÕES DE HISTÓRICO DE VENDAS =====
+        async function loadSalesHistory() {
+            try {
+                const savedSales = localStorage.getItem('sales_history');
+                if (savedSales) {
+                    salesHistory = JSON.parse(savedSales);
+                } else {
+                    salesHistory = [];
+                }
+                renderSalesHistory();
+            } catch (error) {
+                console.error('Erro ao carregar histórico de vendas:', error);
+                salesHistory = [];
+            }
+        }
+
+        function saveSalesHistory() {
+            localStorage.setItem('sales_history', JSON.stringify(salesHistory));
+        }
+
+        function addSaleToHistory(cartItems, total) {
+            const today = new Date();
+            const dayOfWeek = today.getDay(); // 0 = Domingo, 1 = Segunda, etc.
+            const dateString = today.toLocaleDateString('pt-BR');
+            
+            // Encontrar ou criar entrada para hoje
+            let todaySale = salesHistory.find(sale => sale.date === dateString);
+            
+            if (!todaySale) {
+                todaySale = {
+                    date: dateString,
+                    dayOfWeek: dayOfWeek,
+                    items: [],
+                    totalQuantity: 0,
+                    totalValue: 0
+                };
+                salesHistory.push(todaySale);
+            }
+            
+            // Adicionar itens do carrinho à venda de hoje
+            cartItems.forEach(item => {
+                const existingItem = todaySale.items.find(i => 
+                    i.productId === item.id && i.saborName === item.saborName
+                );
+                
+                if (existingItem) {
+                    existingItem.quantity += item.quantity;
+                    existingItem.subtotal += item.price * item.quantity;
+                } else {
+                    todaySale.items.push({
+                        productId: item.id,
+                        productName: item.title,
+                        saborName: item.saborName,
+                        quantity: item.quantity,
+                        price: item.price,
+                        subtotal: item.price * item.quantity
+                    });
+                }
+            });
+            
+            // Atualizar totais
+            todaySale.totalQuantity = todaySale.items.reduce((sum, item) => sum + item.quantity, 0);
+            todaySale.totalValue = todaySale.items.reduce((sum, item) => sum + item.subtotal, 0);
+            
+            saveSalesHistory();
+            renderSalesHistory();
+        }
+
+        function renderSalesHistory() {
+            // Atualizar totais por dia da semana
+            const weekTotals = {
+                1: 0, // Segunda
+                2: 0, // Terça
+                3: 0, // Quarta
+                4: 0, // Quinta
+                5: 0, // Sexta
+                6: 0, // Sábado
+                0: 0  // Domingo
+            };
+            
+            salesHistory.forEach(sale => {
+                if (weekTotals.hasOwnProperty(sale.dayOfWeek)) {
+                    weekTotals[sale.dayOfWeek] += sale.totalValue;
+                }
+            });
+            
+            // Atualizar elementos do DOM
+            elements.mondayTotal.textContent = `R$ ${weekTotals[1].toFixed(2).replace('.', ',')}`;
+            elements.tuesdayTotal.textContent = `R$ ${weekTotals[2].toFixed(2).replace('.', ',')}`;
+            elements.wednesdayTotal.textContent = `R$ ${weekTotals[3].toFixed(2).replace('.', ',')}`;
+            elements.thursdayTotal.textContent = `R$ ${weekTotals[4].toFixed(2).replace('.', ',')}`;
+            elements.fridayTotal.textContent = `R$ ${weekTotals[5].toFixed(2).replace('.', ',')}`;
+            elements.saturdayTotal.textContent = `R$ ${weekTotals[6].toFixed(2).replace('.', ',')}`;
+            elements.sundayTotal.textContent = `R$ ${weekTotals[0].toFixed(2).replace('.', ',')}`;
+            
+            // Renderizar lista de vendas
+            elements.salesHistoryList.innerHTML = '';
+            
+            if (salesHistory.length === 0) {
+                elements.salesHistoryList.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="py-4 px-4 text-center text-gray-500">
+                            Nenhuma venda registrada ainda.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            // Ordenar por data (mais recente primeiro)
+            const sortedSales = [...salesHistory].sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            sortedSales.forEach(sale => {
+                const dayNames = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+                const dayName = dayNames[sale.dayOfWeek];
+                
+                const saleRow = document.createElement('tr');
+                saleRow.innerHTML = `
+                    <td class="py-4 px-4">
+                        <div class="font-medium">${sale.date}</div>
+                        <div class="text-sm text-gray-500">${dayName}</div>
+                    </td>
+                    <td class="py-4 px-4">
+                        <div class="space-y-1">
+                            ${sale.items.map(item => `
+                                <div class="text-sm">
+                                    <span class="font-medium">${item.productName}</span> - ${item.saborName}
+                                    <span class="text-gray-500">(x${item.quantity})</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </td>
+                    <td class="py-4 px-4">
+                        <span class="font-medium">${sale.totalQuantity} itens</span>
+                    </td>
+                    <td class="py-4 px-4">
+                        <span class="font-medium text-green-600">R$ ${sale.totalValue.toFixed(2).replace('.', ',')}</span>
+                    </td>
+                `;
+                
+                elements.salesHistoryList.appendChild(saleRow);
+            });
+        }
+
+        function resetSalesHistory() {
+            if (confirm('Tem certeza que deseja zerar todas as vendas da semana? Esta ação não pode ser desfeita.')) {
+                salesHistory = [];
+                saveSalesHistory();
+                renderSalesHistory();
+                showToast('Vendas da semana zeradas com sucesso!', 'success');
             }
         }
 
@@ -2678,6 +2924,7 @@
             renderCoupons();
             updateCategorySelects();
             renderOrderingProducts();
+            renderSalesHistory();
         }
 
         function showLoginView() {
@@ -2790,6 +3037,9 @@
             
             // Event listeners para ordenação
             elements.saveOrderingBtn.addEventListener('click', saveProductOrdering);
+            
+            // Event listeners para histórico de vendas
+            elements.resetSalesBtn.addEventListener('click', resetSalesHistory);
         }
 
         // ===== HANDLERS DE AUTENTICAÇÃO =====
@@ -3726,6 +3976,9 @@
             // Abrir WhatsApp em nova aba/guia para não interromper o processo
             window.open(whatsappUrl, '_blank');
             
+            // REGISTRAR VENDA NO HISTÓRICO
+            addSaleToHistory(cart, total);
+            
             // Enviar atualização de estoque em background (não bloquear o usuário)
             try {
                 const orderData = {
@@ -3817,6 +4070,8 @@
             
             if (tabName === 'ordering') {
                 renderOrderingProducts();
+            } else if (tabName === 'sales-history') {
+                renderSalesHistory();
             }
         }
 
