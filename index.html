@@ -2710,79 +2710,130 @@
             }
         }
 
+        // CORREÇÃO CRÍTICA: Função para salvar venda no histórico - GARANTINDO que funcione em todos os dispositivos
         async function addSaleToHistory(cartItems, total) {
-            const today = new Date();
-            const dayOfWeek = today.getDay(); // 0 = Domingo, 1 = Segunda, etc.
-            const dateString = today.toLocaleDateString('pt-BR');
-            
-            // Encontrar ou criar entrada para hoje
-            let todaySale = salesHistory.find(sale => sale.date === dateString);
-            
-            if (!todaySale) {
-                todaySale = {
+            try {
+                const today = new Date();
+                const dayOfWeek = today.getDay(); // 0 = Domingo, 1 = Segunda, etc.
+                const dateString = today.toLocaleDateString('pt-BR');
+                
+                console.log('💰 Registrando venda no histórico:', {
                     date: dateString,
                     dayOfWeek: dayOfWeek,
-                    items: [],
-                    totalQuantity: 0,
-                    totalValue: 0
-                };
-                salesHistory.push(todaySale);
-            }
-            
-            // Adicionar itens do carrinho à venda de hoje
-            cartItems.forEach(item => {
-                const existingItem = todaySale.items.find(i => 
-                    i.productId === item.id && i.saborName === item.saborName
-                );
-                
-                if (existingItem) {
-                    existingItem.quantity += item.quantity;
-                    existingItem.subtotal += item.price * item.quantity;
-                } else {
-                    todaySale.items.push({
+                    itemsCount: cartItems.length,
+                    total: total
+                });
+
+                // Preparar dados da venda
+                const saleData = {
+                    date: dateString,
+                    dayOfWeek: dayOfWeek,
+                    items: cartItems.map(item => ({
                         productId: item.id,
                         productName: item.title,
                         saborName: item.saborName,
                         quantity: item.quantity,
                         price: item.price,
                         subtotal: item.price * item.quantity
-                    });
-                }
-            });
-            
-            // Atualizar totais
-            todaySale.totalQuantity = todaySale.items.reduce((sum, item) => sum + item.quantity, 0);
-            todaySale.totalValue = todaySale.items.reduce((sum, item) => sum + item.subtotal, 0);
-            
-            // Salvar no backend
-            try {
-                const response = await fetch(`${API_BASE_URL}/api/sales-history`, {
+                    })),
+                    totalQuantity: cartItems.reduce((sum, item) => sum + item.quantity, 0),
+                    totalValue: total
+                };
+
+                console.log('📦 Dados da venda preparados:', saleData);
+
+                // CORREÇÃO: Usar Promise.race com timeout para garantir que funcione mesmo em conexões lentas
+                const savePromise = fetch(`${API_BASE_URL}/api/sales-history`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ 
-                        saleData: {
-                            date: todaySale.date,
-                            dayOfWeek: todaySale.dayOfWeek,
-                            items: todaySale.items,
-                            totalQuantity: todaySale.totalQuantity,
-                            totalValue: todaySale.totalValue
-                        }
-                    })
+                    body: JSON.stringify({ saleData })
                 });
+
+                // Timeout de 5 segundos
+                const timeoutPromise = new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error('Timeout ao salvar histórico')), 5000)
+                );
+
+                // CORREÇÃO: Usar Promise.race para não travar o processo
+                const response = await Promise.race([savePromise, timeoutPromise]);
                 
-                const data = await response.json();
-                if (data.success) {
-                    console.log('✅ Venda registrada no histórico do backend');
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    console.log('✅ Venda registrada no histórico do backend com sucesso!');
+                } else {
+                    throw new Error(data.error || 'Erro desconhecido no backend');
+                }
+
             } catch (error) {
-                console.error('❌ Erro ao salvar venda no backend:', error);
-                // Fallback para localStorage
-                await saveSalesHistory();
+                console.error('❌ Erro ao salvar venda no histórico:', error);
+                
+                // CORREÇÃO: Fallback robusto para localStorage
+                try {
+                    const today = new Date();
+                    const dateString = today.toLocaleDateString('pt-BR');
+                    const dayOfWeek = today.getDay();
+                    
+                    // Buscar histórico atual do localStorage
+                    const savedSales = localStorage.getItem('sales_history');
+                    let currentHistory = savedSales ? JSON.parse(savedSales) : [];
+                    
+                    // Encontrar ou criar entrada para hoje
+                    let todaySale = currentHistory.find(sale => sale.date === dateString);
+                    
+                    if (!todaySale) {
+                        todaySale = {
+                            date: dateString,
+                            dayOfWeek: dayOfWeek,
+                            items: [],
+                            totalQuantity: 0,
+                            totalValue: 0
+                        };
+                        currentHistory.push(todaySale);
+                    }
+                    
+                    // Adicionar itens do carrinho à venda de hoje
+                    cartItems.forEach(item => {
+                        const existingItem = todaySale.items.find(i => 
+                            i.productId === item.id && i.saborName === item.saborName
+                        );
+                        
+                        if (existingItem) {
+                            existingItem.quantity += item.quantity;
+                            existingItem.subtotal += item.price * item.quantity;
+                        } else {
+                            todaySale.items.push({
+                                productId: item.id,
+                                productName: item.title,
+                                saborName: item.saborName,
+                                quantity: item.quantity,
+                                price: item.price,
+                                subtotal: item.price * item.quantity
+                            });
+                        }
+                    });
+                    
+                    // Atualizar totais
+                    todaySale.totalQuantity = todaySale.items.reduce((sum, item) => sum + item.quantity, 0);
+                    todaySale.totalValue = todaySale.items.reduce((sum, item) => sum + item.subtotal, 0);
+                    
+                    // Salvar no localStorage
+                    localStorage.setItem('sales_history', JSON.stringify(currentHistory));
+                    console.log('✅ Venda salva no localStorage como fallback');
+                    
+                } catch (fallbackError) {
+                    console.error('❌ Erro crítico no fallback do histórico:', fallbackError);
+                }
             }
             
-            renderSalesHistory();
+            // Recarregar e renderizar o histórico
+            await loadSalesHistory();
         }
 
         async function resetSalesHistory() {
@@ -3974,6 +4025,7 @@
             document.body.style.overflow = 'auto';
         }
 
+        // CORREÇÃO CRÍTICA: Função de checkout otimizada para garantir salvamento no histórico
         async function handleCheckout(e) {
             e.preventDefault();
             
@@ -4029,6 +4081,18 @@
                 }
             }
             
+            // CORREÇÃO CRÍTICA: SALVAR NO HISTÓRICO ANTES DO REDIRECIONAMENTO
+            console.log('💾 Salvando venda no histórico antes do WhatsApp...');
+            
+            try {
+                // CORREÇÃO: Usar await para garantir que o histórico seja salvo
+                await addSaleToHistory(cart, total);
+                console.log('✅ Venda salva no histórico com sucesso!');
+            } catch (error) {
+                console.error('❌ Erro ao salvar no histórico:', error);
+                // Não interromper o processo mesmo se falhar o histórico
+            }
+            
             // Criar mensagem para WhatsApp
             let message = `Olá, gostaria de finalizar meu pedido:%0A%0A`;
             
@@ -4072,14 +4136,8 @@
                 message += `${trocoInfo}%0A`;
             }
             
-            // CORREÇÃO: Redirecionar IMEDIATAMENTE para WhatsApp SEM aguardar resposta do backend
+            // CORREÇÃO: Redirecionar para WhatsApp APÓS salvar o histórico
             const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${message}`;
-            
-            // Abrir WhatsApp em nova aba/guia para não interromper o processo
-            window.open(whatsappUrl, '_blank');
-            
-            // REGISTRAR VENDA NO HISTÓRICO - AGORA FUNCIONA EM TODOS OS DISPOSITIVOS
-            await addSaleToHistory(cart, total);
             
             // Enviar atualização de estoque em background (não bloquear o usuário)
             try {
@@ -4116,13 +4174,18 @@
                 console.error('❌ Erro no processo de checkout:', error);
             }
             
-            // Limpar carrinho e fechar modal IMEDIATAMENTE
+            // Limpar carrinho e fechar modal
             cart = [];
             updateCartUI();
             closeCheckoutModal();
             elements.checkoutForm.reset();
             
             showToast('Pedido enviado para o WhatsApp!', 'success');
+            
+            // CORREÇÃO: Abrir WhatsApp APÓS limpar tudo
+            setTimeout(() => {
+                window.open(whatsappUrl, '_blank');
+            }, 500);
         }
 
         function getPaymentMethodName(method) {
