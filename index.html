@@ -18,6 +18,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        /* Todo o CSS existente permanece EXATAMENTE igual */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         
         :root {
@@ -1070,6 +1071,55 @@
             50% { transform: scale(1.05); }
             100% { transform: scale(1); }
         }
+        
+        /* NOVO: Estilo para configuração de WhatsApp */
+        .whatsapp-info-card {
+            background-color: #25D366;
+            color: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .test-whatsapp-btn {
+            background-color: #075E54;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        
+        .test-whatsapp-btn:hover {
+            background-color: #05463d;
+        }
+        
+        /* Estilo para status do WhatsApp */
+        .whatsapp-status {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .whatsapp-status-connected {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+        
+        .whatsapp-status-disconnected {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+        
+        .whatsapp-status-error {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
     </style>
 </head>
 <body>
@@ -1413,6 +1463,10 @@
                 <button class="nav-tab px-4 py-3 font-medium" data-tab="sales-history">
                     <i class="fas fa-chart-line mr-2"></i>Histórico de Vendas
                 </button>
+                <!-- NOVA ABA: Configuração WhatsApp -->
+                <button class="nav-tab px-4 py-3 font-medium" data-tab="whatsapp-config">
+                    <i class="fab fa-whatsapp mr-2"></i>WhatsApp
+                </button>
             </div>
 
             <!-- Dashboard Tab -->
@@ -1667,6 +1721,136 @@
                                 <!-- Histórico de vendas será inserido aqui -->
                             </tbody>
                         </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- NOVA ABA: Configuração WhatsApp -->
+            <div id="tab-whatsapp-config" class="tab-content hidden">
+                <div class="flex justify-between items-center mb-6 flex-wrap gap-3">
+                    <h2 class="text-2xl font-bold text-gray-800">Configuração WhatsApp</h2>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow overflow-hidden mb-6">
+                    <div class="whatsapp-info-card">
+                        <h3 class="font-semibold text-lg mb-2">📱 Relatório Diário de Vendas</h3>
+                        <p class="text-sm mb-4">
+                            Configure para receber um relatório automático das vendas do dia todo às 18:00.
+                        </p>
+                        <p class="text-xs opacity-80">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Usando o serviço IngaJa para envio de mensagens via WhatsApp
+                        </p>
+                    </div>
+                    
+                    <div class="p-6">
+                        <h3 class="font-semibold text-lg mb-4 text-gray-800">Configuração do Token</h3>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-2 text-gray-700">
+                                    Token de Autenticação (Bearer Token) *
+                                </label>
+                                <input 
+                                    type="password" 
+                                    id="whatsapp-token" 
+                                    placeholder="Digite seu token do IngaJa"
+                                    class="focus-ring w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2"
+                                >
+                                <p class="text-xs text-gray-500 mt-2">
+                                    Token obtido no menu 'Conexões' do IngaJa > Editar conexão
+                                </p>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium mb-2 text-gray-700">
+                                    Número do WhatsApp para Receber Relatórios *
+                                </label>
+                                <input 
+                                    type="text" 
+                                    id="whatsapp-number" 
+                                    placeholder="558599999999"
+                                    class="focus-ring w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2"
+                                    value="5584996933713"
+                                >
+                                <p class="text-xs text-gray-500 mt-2">
+                                    Formato: Código do país + DDD + número (sem espaços ou caracteres especiais)
+                                </p>
+                            </div>
+                            
+                            <div class="flex items-center">
+                                <input 
+                                    type="checkbox" 
+                                    id="enable-daily-reports" 
+                                    class="mr-3 h-5 w-5"
+                                    checked
+                                >
+                                <label for="enable-daily-reports" class="text-gray-700">
+                                    Ativar relatório diário automático (18:00)
+                                </label>
+                            </div>
+                            
+                            <div class="flex gap-3 pt-4">
+                                <button 
+                                    id="save-whatsapp-config" 
+                                    class="bg-green-600 text-white px-6 py-3 rounded-lg font-medium flex items-center gap-2 hover:bg-green-700"
+                                >
+                                    <i class="fas fa-save"></i>
+                                    Salvar Configuração
+                                </button>
+                                
+                                <button 
+                                    id="test-whatsapp" 
+                                    class="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium flex items-center gap-2 hover:bg-blue-700"
+                                >
+                                    <i class="fab fa-whatsapp"></i>
+                                    Testar Envio
+                                </button>
+                                
+                                <button 
+                                    id="send-today-report" 
+                                    class="bg-purple-600 text-white px-6 py-3 rounded-lg font-medium flex items-center gap-2 hover:bg-purple-700"
+                                >
+                                    <i class="fas fa-chart-bar"></i>
+                                    Enviar Relatório Hoje
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow overflow-hidden">
+                    <div class="p-6">
+                        <h3 class="font-semibold text-lg mb-4 text-gray-800">Status do Sistema</h3>
+                        
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                <div>
+                                    <span class="font-medium">Relatório Diário</span>
+                                    <p class="text-sm text-gray-500">Enviado automaticamente às 18:00</p>
+                                </div>
+                                <div class="flex items-center">
+                                    <span id="whatsapp-status" class="whatsapp-status whatsapp-status-connected">Configurado</span>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                <div>
+                                    <span class="font-medium">Próximo Relatório</span>
+                                    <p class="text-sm text-gray-500" id="next-report-time">--:--</p>
+                                </div>
+                                <div>
+                                    <span id="report-status" class="whatsapp-status whatsapp-status-connected">Aguardando</span>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                <div>
+                                    <span class="font-medium">Último Relatório Enviado</span>
+                                    <p class="text-sm text-gray-500" id="last-report-time">Nenhum enviado ainda</p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1994,6 +2178,16 @@
         const DELIVERY_FEE = 3.00; // Taxa de entrega de R$ 3,00
         const MINIMUM_ORDER_FOR_FREE_SHIPPING = 10.00; // Valor mínimo para frete grátis
 
+        // ===== CONFIGURAÇÃO DO WHATSAPP =====
+        let whatsappConfig = {
+            token: '',
+            whatsappNumber: WHATSAPP_NUMBER,
+            enableDailyReports: true,
+            dailyReportTime: '18:00', // Hora do relatório diário
+            lastReportSent: null,
+            nextReportTime: null
+        };
+
         // ===== SISTEMA DE AUTENTICAÇÃO =====
         function simpleEncrypt(text) {
             return btoa(unescape(encodeURIComponent(text))).split('').reverse().join('');
@@ -2121,6 +2315,7 @@
         let adminCurrentTab = 'dashboard';
         let saborCounter = 0;
         let appliedCoupon = null;
+        let whatsappInterval = null;
 
         // ===== ELEMENTOS DO DOM =====
         const elements = {
@@ -2246,6 +2441,18 @@
             fridayTotal: document.getElementById('friday-total'),
             saturdayTotal: document.getElementById('saturday-total'),
             sundayTotal: document.getElementById('sunday-total'),
+            
+            // WhatsApp Config - CORREÇÃO: Usar apenas uma referência
+            whatsappToken: document.getElementById('whatsapp-token'),
+            whatsappNumber: document.getElementById('whatsapp-number'),
+            enableDailyReports: document.getElementById('enable-daily-reports'),
+            saveWhatsappConfig: document.getElementById('save-whatsapp-config'),
+            testWhatsapp: document.getElementById('test-whatsapp'),
+            sendTodayReport: document.getElementById('send-today-report'),
+            whatsappStatus: document.getElementById('whatsapp-status'),
+            nextReportTime: document.getElementById('next-report-time'),
+            reportStatus: document.getElementById('report-status'),
+            lastReportTime: document.getElementById('last-report-time'),
             
             // Modais
             addProductModal: document.getElementById('add-product-modal'),
@@ -2575,6 +2782,9 @@
                 
                 filteredProducts = [...products.filter(p => p.status === 'active')];
                 
+                // Carregar configuração do WhatsApp
+                loadWhatsappConfig();
+                
                 // ESCONDER TELA DE BOAS-VINDAS QUANDO OS DADOS CARREGAREM
                 hideWelcomeScreen();
                 
@@ -2650,8 +2860,389 @@
                 
                 filteredProducts = [...products.filter(p => p.status === 'active')];
                 
+                // Carregar configuração do WhatsApp
+                loadWhatsappConfig();
+                
                 // ESCONDER TELA DE BOAS-VINDAS MESMO COM ERRO
                 hideWelcomeScreen();
+            }
+        }
+
+        // ===== FUNÇÕES DE WHATSAPP - CORREÇÕES =====
+        function loadWhatsappConfig() {
+            const savedConfig = localStorage.getItem('whatsapp_config');
+            if (savedConfig) {
+                try {
+                    whatsappConfig = JSON.parse(savedConfig);
+                    // Corrigir datas para evitar erro de serialização
+                    if (whatsappConfig.lastReportSent && typeof whatsappConfig.lastReportSent === 'string') {
+                        whatsappConfig.lastReportSent = new Date(whatsappConfig.lastReportSent);
+                    }
+                    if (whatsappConfig.nextReportTime && typeof whatsappConfig.nextReportTime === 'string') {
+                        whatsappConfig.nextReportTime = new Date(whatsappConfig.nextReportTime);
+                    }
+                    updateWhatsappUI();
+                } catch (error) {
+                    console.error('Erro ao carregar configuração WhatsApp:', error);
+                    // Resetar configuração em caso de erro
+                    whatsappConfig = {
+                        token: '',
+                        whatsappNumber: WHATSAPP_NUMBER,
+                        enableDailyReports: true,
+                        dailyReportTime: '18:00',
+                        lastReportSent: null,
+                        nextReportTime: null
+                    };
+                }
+            }
+            
+            // Iniciar verificação de relatório diário
+            startDailyReportCheck();
+        }
+
+        function saveWhatsappConfig() {
+            try {
+                // Converter datas para strings ISO para armazenamento seguro
+                const configToSave = {
+                    ...whatsappConfig,
+                    lastReportSent: whatsappConfig.lastReportSent ? whatsappConfig.lastReportSent.toISOString() : null,
+                    nextReportTime: whatsappConfig.nextReportTime ? whatsappConfig.nextReportTime.toISOString() : null
+                };
+                
+                localStorage.setItem('whatsapp_config', JSON.stringify(configToSave));
+                updateWhatsappUI();
+                showToast('Configuração do WhatsApp salva!', 'success');
+            } catch (error) {
+                console.error('Erro ao salvar configuração WhatsApp:', error);
+                showToast('Erro ao salvar configuração WhatsApp', 'error');
+            }
+        }
+
+        function updateWhatsappUI() {
+            // Atualizar campos do formulário
+            if (elements.whatsappToken) {
+                elements.whatsappToken.value = whatsappConfig.token || '';
+            }
+            if (elements.whatsappNumber) {
+                elements.whatsappNumber.value = whatsappConfig.whatsappNumber || WHATSAPP_NUMBER;
+            }
+            if (elements.enableDailyReports) {
+                elements.enableDailyReports.checked = whatsappConfig.enableDailyReports;
+            }
+            
+            // Atualizar status
+            if (elements.whatsappStatus) {
+                const hasToken = whatsappConfig.token && whatsappConfig.token.trim() !== '';
+                elements.whatsappStatus.textContent = hasToken ? 'Configurado' : 'Não configurado';
+                elements.whatsappStatus.className = hasToken ? 
+                    'whatsapp-status whatsapp-status-connected' : 
+                    'whatsapp-status whatsapp-status-disconnected';
+            }
+            
+            // Atualizar próximo relatório
+            updateNextReportTime();
+            
+            // Atualizar último relatório enviado
+            if (elements.lastReportTime) {
+                if (whatsappConfig.lastReportSent) {
+                    const lastSent = whatsappConfig.lastReportSent instanceof Date ? 
+                        whatsappConfig.lastReportSent : new Date(whatsappConfig.lastReportSent);
+                    elements.lastReportTime.textContent = lastSent.toLocaleString('pt-BR');
+                } else {
+                    elements.lastReportTime.textContent = 'Nenhum enviado ainda';
+                }
+            }
+        }
+
+        function updateNextReportTime() {
+            if (!whatsappConfig.enableDailyReports || !whatsappConfig.token) {
+                if (elements.nextReportTime) {
+                    elements.nextReportTime.textContent = 'Desativado';
+                }
+                if (elements.reportStatus) {
+                    elements.reportStatus.textContent = 'Desativado';
+                    elements.reportStatus.className = 'whatsapp-status whatsapp-status-disconnected';
+                }
+                return;
+            }
+            
+            const now = new Date();
+            const [reportHour, reportMinute] = whatsappConfig.dailyReportTime.split(':').map(Number);
+            
+            // Criar data para o relatório de hoje às 18:00
+            const reportTime = new Date(now);
+            reportTime.setHours(reportHour, reportMinute, 0, 0);
+            
+            // Se já passou das 18:00 hoje, agendar para amanhã
+            if (now > reportTime) {
+                reportTime.setDate(reportTime.getDate() + 1);
+            }
+            
+            whatsappConfig.nextReportTime = reportTime;
+            
+            // Atualizar UI
+            if (elements.nextReportTime) {
+                elements.nextReportTime.textContent = reportTime.toLocaleTimeString('pt-BR', { 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                }) + ' - ' + reportTime.toLocaleDateString('pt-BR');
+            }
+            
+            if (elements.reportStatus) {
+                elements.reportStatus.textContent = 'Aguardando';
+                elements.reportStatus.className = 'whatsapp-status whatsapp-status-connected';
+            }
+        }
+
+        function startDailyReportCheck() {
+            // Limpar intervalo anterior se existir
+            if (whatsappInterval) {
+                clearInterval(whatsappInterval);
+            }
+            
+            // Verificar a cada minuto se é hora do relatório
+            whatsappInterval = setInterval(() => {
+                if (whatsappConfig.enableDailyReports && whatsappConfig.token) {
+                    const now = new Date();
+                    const [reportHour, reportMinute] = whatsappConfig.dailyReportTime.split(':').map(Number);
+                    
+                    // Verificar se é hora do relatório (entre 18:00 e 18:01)
+                    if (now.getHours() === reportHour && now.getMinutes() === reportMinute) {
+                        sendDailySalesReport();
+                    }
+                }
+            }, 60000); // Verificar a cada minuto
+        }
+
+        async function sendDailySalesReport() {
+            if (!whatsappConfig.token || !whatsappConfig.whatsappNumber) {
+                console.log('❌ WhatsApp não configurado para envio de relatório');
+                return;
+            }
+            
+            try {
+                console.log('📊 Preparando relatório diário de vendas...');
+                
+                // Calcular vendas de hoje
+                const today = new Date();
+                const todayString = today.toLocaleDateString('pt-BR');
+                
+                // Encontrar ou criar entrada para hoje
+                let todaySales = salesHistory.find(sale => sale.date === todayString);
+                
+                if (!todaySales || todaySales.totalValue === 0) {
+                    console.log('📊 Nenhuma venda hoje para reportar');
+                    return;
+                }
+                
+                // Criar mensagem do relatório
+                let message = `📊 *RELATÓRIO DIÁRIO - DONA BROOKIES* 📊\n\n`;
+                message += `Data: ${todayString}\n`;
+                message += `Hora do relatório: ${today.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}\n\n`;
+                message += `📈 *RESUMO DO DIA*\n`;
+                message += `Total de itens vendidos: ${todaySales.totalQuantity}\n`;
+                message += `Valor total: R$ ${todaySales.totalValue.toFixed(2)}\n\n`;
+                
+                // Adicionar detalhes dos produtos vendidos
+                if (todaySales.items && todaySales.items.length > 0) {
+                    message += `🛍️ *PRODUTOS VENDIDOS*\n`;
+                    todaySales.items.forEach(item => {
+                        message += `• ${item.productName} - ${item.saborName}\n`;
+                        message += `  Quantidade: ${item.quantity} | Total: R$ ${item.subtotal.toFixed(2)}\n`;
+                    });
+                }
+                
+                message += `\n💰 *TOTAL DO DIA: R$ ${todaySales.totalValue.toFixed(2)}*\n\n`;
+                message += `_Relatório enviado automaticamente pelo sistema Dona Brookies_`;
+                
+                // Enviar via API do IngaJa - USANDO PROXY PARA EVITAR CORS
+                const response = await sendWhatsAppMessageViaProxy(
+                    whatsappConfig.whatsappNumber,
+                    message
+                );
+                
+                if (response.success) {
+                    console.log('✅ Relatório diário enviado com sucesso!');
+                    
+                    // Atualizar último relatório enviado
+                    whatsappConfig.lastReportSent = new Date();
+                    saveWhatsappConfig();
+                    
+                    showToast('Relatório diário enviado para WhatsApp!', 'success');
+                } else {
+                    console.error('❌ Erro ao enviar relatório:', response.error);
+                }
+                
+            } catch (error) {
+                console.error('❌ Erro ao enviar relatório diário:', error);
+            }
+        }
+
+        // NOVA FUNÇÃO: Enviar mensagem via proxy para evitar CORS
+        async function sendWhatsAppMessageViaProxy(number, body) {
+            if (!whatsappConfig.token || whatsappConfig.token.trim() === '') {
+                return { success: false, error: 'Token não configurado' };
+            }
+            
+            try {
+                const payload = {
+                    number: number.toString(),
+                    body: body,
+                    userId: "",
+                    queueId: "",
+                    sendSignature: false,
+                    closeTicket: false
+                };
+                
+                console.log('📤 Enviando mensagem WhatsApp via proxy para:', number);
+                console.log('📝 Conteúdo:', body.substring(0, 100) + '...');
+                
+                // Usar o seu backend como proxy para evitar CORS
+                const response = await fetch(`${API_BASE_URL}/api/whatsapp/send`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        token: whatsappConfig.token,
+                        payload: payload
+                    })
+                });
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${errorText}`);
+                }
+                
+                const data = await response.json();
+                console.log('✅ Resposta do WhatsApp via proxy:', data);
+                return { success: true, data: data };
+                
+            } catch (error) {
+                console.error('❌ Erro ao enviar mensagem WhatsApp via proxy:', error);
+                // Tentar método alternativo
+                return await sendWhatsAppMessageDirect(number, body);
+            }
+        }
+
+        // FUNÇÃO ALTERNATIVA: Enviar diretamente (pode falhar por CORS)
+        async function sendWhatsAppMessageDirect(number, body) {
+            if (!whatsappConfig.token || whatsappConfig.token.trim() === '') {
+                return { success: false, error: 'Token não configurado' };
+            }
+            
+            try {
+                const payload = {
+                    number: number.toString(),
+                    body: body,
+                    userId: "",
+                    queueId: "",
+                    sendSignature: false,
+                    closeTicket: false
+                };
+                
+                const response = await fetch('https://talkapi.ingaja.com.br/api/messages/send', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${whatsappConfig.token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${errorText}`);
+                }
+                
+                const data = await response.json();
+                console.log('✅ Resposta do WhatsApp direto:', data);
+                return { success: true, data: data };
+                
+            } catch (error) {
+                console.error('❌ Erro ao enviar mensagem WhatsApp direto:', error);
+                return { success: false, error: error.message };
+            }
+        }
+
+        async function testWhatsAppConnection() {
+            if (!whatsappConfig.token || whatsappConfig.token.trim() === '') {
+                showToast('Configure o token do WhatsApp primeiro!', 'warning');
+                return;
+            }
+            
+            // CORREÇÃO: Usar let em vez de const para a variável testMessage
+            let testMessage = `✅ *TESTE DE CONEXÃO - DONA BROOKIES*\n\n`;
+            testMessage += `Sistema de relatórios funcionando corretamente!\n`;
+            testMessage += `Hora do teste: ${new Date().toLocaleString('pt-BR')}\n`;
+            testMessage += `_Esta é uma mensagem de teste do sistema automático de relatórios._`;
+            
+            const result = await sendWhatsAppMessageViaProxy(whatsappConfig.whatsappNumber, testMessage);
+            
+            if (result.success) {
+                showToast('Mensagem de teste enviada com sucesso!', 'success');
+            } else {
+                showToast(`Erro ao enviar: ${result.error}`, 'error');
+            }
+        }
+
+        async function sendTodaySalesReportManually() {
+            if (!whatsappConfig.token || whatsappConfig.token.trim() === '') {
+                showToast('Configure o token do WhatsApp primeiro!', 'warning');
+                return;
+            }
+            
+            try {
+                // Calcular vendas de hoje
+                const today = new Date();
+                const todayString = today.toLocaleDateString('pt-BR');
+                
+                const todaySales = salesHistory.find(sale => sale.date === todayString);
+                
+                if (!todaySales || todaySales.totalValue === 0) {
+                    showToast('Nenhuma venda registrada hoje ainda.', 'info');
+                    return;
+                }
+                
+                // Criar mensagem do relatório
+                let message = `📊 *RELATÓRIO DE VENDAS - DONA BROOKIES* 📊\n\n`;
+                message += `Data: ${todayString}\n`;
+                message += `Hora do relatório: ${today.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}\n\n`;
+                message += `📈 *RESUMO DO DIA*\n`;
+                message += `Total de itens vendidos: ${todaySales.totalQuantity}\n`;
+                message += `Valor total: R$ ${todaySales.totalValue.toFixed(2)}\n\n`;
+                
+                // Adicionar detalhes dos produtos vendidos
+                if (todaySales.items && todaySales.items.length > 0) {
+                    message += `🛍️ *PRODUTOS VENDIDOS*\n`;
+                    todaySales.items.forEach(item => {
+                        message += `• ${item.productName} - ${item.saborName}\n`;
+                        message += `  Quantidade: ${item.quantity} | Total: R$ ${item.subtotal.toFixed(2)}\n`;
+                    });
+                }
+                
+                message += `\n💰 *TOTAL DO DIA: R$ ${todaySales.totalValue.toFixed(2)}*\n\n`;
+                message += `_Relatório enviado manualmente pelo sistema Dona Brookies_`;
+                
+                // Enviar via proxy
+                const response = await sendWhatsAppMessageViaProxy(
+                    whatsappConfig.whatsappNumber,
+                    message
+                );
+                
+                if (response.success) {
+                    showToast('Relatório de hoje enviado com sucesso!', 'success');
+                    
+                    // Atualizar último relatório enviado
+                    whatsappConfig.lastReportSent = new Date();
+                    saveWhatsappConfig();
+                } else {
+                    showToast(`Erro ao enviar: ${response.error}`, 'error');
+                }
+                
+            } catch (error) {
+                console.error('❌ Erro ao enviar relatório manual:', error);
+                showToast('Erro ao enviar relatório: ' + error.message, 'error');
             }
         }
 
@@ -3005,6 +3596,7 @@
             updateCategorySelects();
             renderOrderingProducts();
             renderSalesHistory();
+            updateWhatsappUI();
         }
 
         function showLoginView() {
@@ -3120,6 +3712,14 @@
             
             // Event listeners para histórico de vendas
             elements.resetSalesBtn.addEventListener('click', resetSalesHistory);
+            
+            // Event listeners para WhatsApp - CORRIGIDOS
+            elements.saveWhatsappConfig.addEventListener('click', saveWhatsappConfigHandler);
+            elements.testWhatsapp.addEventListener('click', testWhatsAppConnection);
+            elements.sendTodayReport.addEventListener('click', sendTodaySalesReportManually);
+            elements.enableDailyReports.addEventListener('change', updateWhatsappConfigFromUI);
+            elements.whatsappToken.addEventListener('input', updateWhatsappConfigFromUI);
+            elements.whatsappNumber.addEventListener('input', updateWhatsappConfigFromUI);
         }
 
         // ===== HANDLERS DE AUTENTICAÇÃO =====
@@ -3151,6 +3751,32 @@
         function handleLogout() {
             logout();
             showToast('Você saiu do sistema.', 'success');
+        }
+
+        // ===== HANDLERS DO WHATSAPP - CORRIGIDOS =====
+        function saveWhatsappConfigHandler() {
+            whatsappConfig.token = elements.whatsappToken.value.trim();
+            whatsappConfig.whatsappNumber = elements.whatsappNumber.value.trim();
+            whatsappConfig.enableDailyReports = elements.enableDailyReports.checked;
+            
+            if (!whatsappConfig.token) {
+                showToast('Por favor, insira o token do WhatsApp.', 'warning');
+                return;
+            }
+            
+            if (!whatsappConfig.whatsappNumber) {
+                showToast('Por favor, insira o número do WhatsApp.', 'warning');
+                return;
+            }
+            
+            saveWhatsappConfig();
+        }
+
+        function updateWhatsappConfigFromUI() {
+            whatsappConfig.token = elements.whatsappToken.value.trim();
+            whatsappConfig.whatsappNumber = elements.whatsappNumber.value.trim();
+            whatsappConfig.enableDailyReports = elements.enableDailyReports.checked;
+            updateWhatsappUI();
         }
 
         // ===== FUNÇÕES DE CHECKOUT =====
@@ -4176,6 +4802,8 @@
                 renderOrderingProducts();
             } else if (tabName === 'sales-history') {
                 renderSalesHistory();
+            } else if (tabName === 'whatsapp-config') {
+                updateWhatsappUI();
             }
         }
 
@@ -5155,19 +5783,36 @@
         init();
     </script>
     
-    <!-- Service Worker Registration -->
+    <!-- Service Worker Registration - CORRIGIDO PARA EVITAR ERRO 404 -->
     <script>
-        // Registrar Service Worker para PWA
+        // Verificar se o Service Worker é suportado
         if ('serviceWorker' in navigator) {
-            window.addEventListener('load', function() {
-                navigator.serviceWorker.register('/sw.js')
-                    .then(function(registration) {
-                        console.log('Service Worker registrado com sucesso:', registration);
-                    })
-                    .catch(function(error) {
+            // Tentar registrar o Service Worker, mas ignorar erros 404
+            navigator.serviceWorker.register('/sw.js')
+                .then(function(registration) {
+                    console.log('Service Worker registrado com sucesso:', registration);
+                })
+                .catch(function(error) {
+                    // Ignorar erros de 404 para o Service Worker
+                    if (error.message.includes('404')) {
+                        console.log('Service Worker não encontrado (404) - ignorando');
+                    } else {
                         console.log('Falha ao registrar Service Worker:', error);
-                    });
-            });
+                    }
+                });
+        }
+        
+        // Verificar se o Manifest está disponível
+        if ('serviceWorker' in navigator && 'PushManager' in window) {
+            // Verificar se estamos em produção
+            if (window.location.protocol === 'https:' || window.location.hostname === 'localhost') {
+                // Tentar instalar como PWA
+                window.addEventListener('beforeinstallprompt', (e) => {
+                    // Prevenir o prompt automático
+                    e.preventDefault();
+                    console.log('PWA pode ser instalado');
+                });
+            }
         }
     </script>
 </body>
