@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -3246,69 +3247,39 @@
             }
         }
 
-        // ===== FUNÇÕES DE HISTÓRICO DE VENDAS - CORREÇÃO COMPLETA =====
+        // ===== FUNÇÕES DE HISTÓRICO DE VENDAS =====
         async function loadSalesHistory() {
-    try {
-        console.log('🔄 Carregando histórico de vendas...');
-        
-        // Buscar do backend primeiro
-        const response = await fetch(`${API_BASE_URL}/api/sales-history`);
-        
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
-        }
-        
-        const data = await response.json();
-        
-        // CORREÇÃO: Garantir que salesHistory seja um array
-        if (data.salesHistory && Array.isArray(data.salesHistory)) {
-            // CORREÇÃO: Normalizar os dados
-            salesHistory = data.salesHistory.map(sale => ({
-                id: sale.id,
-                date: sale.date || '',
-                dayOfWeek: sale.day_of_week || sale.dayOfWeek || 0,
-                items: Array.isArray(sale.items) ? sale.items : [],
-                totalQuantity: sale.total_quantity || sale.totalQuantity || 0,
-                totalValue: parseFloat(sale.total_value || sale.totalValue) || 0,
-                created_at: sale.created_at
-            }));
-            
-            console.log('✅ Histórico de vendas carregado do backend:', salesHistory.length, 'registros');
-            console.log('📊 Exemplo de venda:', salesHistory[0]);
-        } else {
-            // Fallback para localStorage
-            console.log('📁 Nenhum histórico no backend, verificando localStorage...');
-            const savedSales = localStorage.getItem('sales_backup');
-            if (savedSales) {
-                salesHistory = JSON.parse(savedSales);
-                console.log('📁 Histórico carregado do localStorage:', salesHistory.length, 'registros');
-            } else {
-                salesHistory = [];
-                console.log('📁 Nenhum histórico encontrado');
+            try {
+                // Buscar do backend primeiro
+                const response = await fetch(`${API_BASE_URL}/api/sales-history`);
+                const data = await response.json();
+                
+                if (data.salesHistory && Array.isArray(data.salesHistory)) {
+                    salesHistory = data.salesHistory;
+                    console.log('✅ Histórico de vendas carregado do backend:', salesHistory.length, 'registros');
+                } else {
+                    // Fallback para localStorage
+                    const savedSales = localStorage.getItem('sales_history');
+                    if (savedSales) {
+                        salesHistory = JSON.parse(savedSales);
+                        console.log('📁 Histórico de vendas carregado do localStorage:', salesHistory.length, 'registros');
+                    } else {
+                        salesHistory = [];
+                        console.log('📁 Nenhum histórico de vendas encontrado');
+                    }
+                }
+                renderSalesHistory();
+            } catch (error) {
+                console.error('❌ Erro ao carregar histórico de vendas:', error);
+                // Fallback para localStorage
+                const savedSales = localStorage.getItem('sales_history');
+                if (savedSales) {
+                    salesHistory = JSON.parse(savedSales);
+                } else {
+                    salesHistory = [];
+                }
             }
         }
-        
-        renderSalesHistory();
-    } catch (error) {
-        console.error('❌ Erro ao carregar histórico de vendas:', error);
-        
-        // Fallback definitivo
-        try {
-            const savedSales = localStorage.getItem('sales_backup');
-            if (savedSales) {
-                salesHistory = JSON.parse(savedSales);
-            } else {
-                salesHistory = [];
-            }
-            console.log('🔄 Usando histórico local como fallback:', salesHistory.length, 'registros');
-        } catch (e) {
-            console.error('❌ Erro no fallback:', e);
-            salesHistory = [];
-        }
-        
-        renderSalesHistory();
-    }
-}
 
         async function saveSalesHistory() {
             try {
@@ -3332,96 +3303,80 @@
             }
         }
 
-        // CORREÇÃO COMPLETA: Função para registrar venda no histórico
-        // FUNÇÃO SIMPLIFICADA QUE SEMPRE FUNCIONA
-async function addSaleToHistory(cartItems, total, deliveryType = '', customerName = '') {
-    try {
-        console.log('🚨 REGISTRANDO VENDA NO HISTÓRICO...');
-        
-        const today = new Date();
-        const todayString = today.toLocaleDateString('pt-BR');  
-        
-        // Preparar dados básicos
-        const saleData = {
-            date: todayString,
-            dayOfWeek: today.getDay(),
-            items: cartItems.map(item => ({
-                productId: item.id,
-                productName: item.title,
-                saborName: item.saborName,
-                quantity: item.quantity,
-                price: item.price,
-                subtotal: item.price * item.quantity
-            })),
-            totalQuantity: cartItems.reduce((sum, item) => sum + item.quantity, 0),
-            totalValue: total,
-            customerName: customerName,
-            deliveryType: deliveryType,
-            timestamp: new Date().toISOString()
-        };
-        
-        console.log('📤 Enviando para API...');
-        
-        // Tentar API primeiro
-        try {
-            const response = await fetch(`${API_BASE_URL}/api/sales-history`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ saleData })
+        async function addSaleToHistory(cartItems, total) {
+            const today = new Date();
+            const dayOfWeek = today.getDay(); // 0 = Domingo, 1 = Segunda, etc.
+            const dateString = today.toLocaleDateString('pt-BR');
+            
+            // Encontrar ou criar entrada para hoje
+            let todaySale = salesHistory.find(sale => sale.date === dateString);
+            
+            if (!todaySale) {
+                todaySale = {
+                    date: dateString,
+                    dayOfWeek: dayOfWeek,
+                    items: [],
+                    totalQuantity: 0,
+                    totalValue: 0
+                };
+                salesHistory.push(todaySale);
+            }
+            
+            // Adicionar itens do carrinho à venda de hoje
+            cartItems.forEach(item => {
+                const existingItem = todaySale.items.find(i => 
+                    i.productId === item.id && i.saborName === item.saborName
+                );
+                
+                if (existingItem) {
+                    existingItem.quantity += item.quantity;
+                    existingItem.subtotal += item.price * item.quantity;
+                } else {
+                    todaySale.items.push({
+                        productId: item.id,
+                        productName: item.title,
+                        saborName: item.saborName,
+                        quantity: item.quantity,
+                        price: item.price,
+                        subtotal: item.price * item.quantity
+                    });
+                }
             });
             
-            const result = await response.json();
+            // Atualizar totais
+            todaySale.totalQuantity = todaySale.items.reduce((sum, item) => sum + item.quantity, 0);
+            todaySale.totalValue = todaySale.items.reduce((sum, item) => sum + item.subtotal, 0);
             
-            if (result.success) {
-                console.log('✅ Venda registrada na API!');
-            } else {
-                console.log('⚠️ API retornou erro, usando localStorage...');
-                throw new Error('API failed');
+            // Salvar no backend
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/sales-history`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        saleData: {
+                            date: todaySale.date,
+                            dayOfWeek: todaySale.dayOfWeek,
+                            items: todaySale.items,
+                            totalQuantity: todaySale.totalQuantity,
+                            totalValue: todaySale.totalValue
+                        }
+                    })
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    console.log('✅ Venda registrada no histórico do backend');
+                }
+            } catch (error) {
+                console.error('❌ Erro ao salvar venda no backend:', error);
+                // Fallback para localStorage
+                await saveSalesHistory();
             }
             
-        } catch (apiError) {
-            console.log('🔄 API falhou, salvando localmente...');
-            
-            // SALVAR NO LOCALSTORAGE (garantido)
-            let localSales = JSON.parse(localStorage.getItem('sales_backup') || '[]');
-            localSales.push(saleData);
-            
-            // Manter apenas últimos 50 pedidos
-            if (localSales.length > 50) {
-                localSales = localSales.slice(-50);
-            }
-            
-            localStorage.setItem('sales_backup', JSON.stringify(localSales));
-            console.log('✅ Venda salva no localStorage! Total:', localSales.length);
+            renderSalesHistory();
         }
-        
-        // SEMPRE retornar sucesso para não bloquear o pedido
-        return true;
-        
-    } catch (error) {
-        console.error('❌ Erro no registro de venda:', error);
-        
-        // Último recurso: salvar em cookie
-        try {
-            const simpleSale = {
-                date: new Date().toLocaleDateString('pt-BR'),
-                time: new Date().toLocaleTimeString('pt-BR'),
-                customer: customerName || 'Cliente',
-                total: total,
-                itemsCount: cartItems.length
-            };
-            
-            document.cookie = `last_sale_${Date.now()}=${encodeURIComponent(JSON.stringify(simpleSale))}; max-age=604800; path=/`;
-            console.log('✅ Venda salva em cookie de emergência');
-        } catch (e) {
-            console.log('⚠️ Não conseguiu salvar nem em cookie');
-        }
-        
-        return true; // SEMPRE retorna true para não bloquear o pedido
-    }
-}
 
         async function resetSalesHistory() {
             if (confirm('Tem certeza que deseja zerar todas as vendas da semana? Esta ação não pode ser desfeita.')) {
@@ -3447,145 +3402,81 @@ async function addSaleToHistory(cartItems, total, deliveryType = '', customerNam
             }
         }
 
-     function renderSalesHistory() {
-    console.log('📊 Renderizando histórico de vendas...', salesHistory);
-    
-    try {
-        // Atualizar totais por dia da semana
-        const weekTotals = {
-            1: 0, // Segunda
-            2: 0, // Terça
-            3: 0, // Quarta
-            4: 0, // Quinta
-            5: 0, // Sexta
-            6: 0, // Sábado
-            0: 0  // Domingo
-        };
-        
-        // CORREÇÃO: Verificar cada venda antes de usar
-        salesHistory.forEach(sale => {
-            if (sale && weekTotals.hasOwnProperty(sale.dayOfWeek)) {
-                const totalValue = sale.totalValue || sale.total_value || 0;
-                weekTotals[sale.dayOfWeek] += parseFloat(totalValue) || 0;
+        function renderSalesHistory() {
+            // Atualizar totais por dia da semana
+            const weekTotals = {
+                1: 0, // Segunda
+                2: 0, // Terça
+                3: 0, // Quarta
+                4: 0, // Quinta
+                5: 0, // Sexta
+                6: 0, // Sábado
+                0: 0  // Domingo
+            };
+            
+            salesHistory.forEach(sale => {
+                if (weekTotals.hasOwnProperty(sale.dayOfWeek)) {
+                    weekTotals[sale.dayOfWeek] += sale.totalValue;
+                }
+            });
+            
+            // Atualizar elementos do DOM
+            elements.mondayTotal.textContent = `R$ ${weekTotals[1].toFixed(2).replace('.', ',')}`;
+            elements.tuesdayTotal.textContent = `R$ ${weekTotals[2].toFixed(2).replace('.', ',')}`;
+            elements.wednesdayTotal.textContent = `R$ ${weekTotals[3].toFixed(2).replace('.', ',')}`;
+            elements.thursdayTotal.textContent = `R$ ${weekTotals[4].toFixed(2).replace('.', ',')}`;
+            elements.fridayTotal.textContent = `R$ ${weekTotals[5].toFixed(2).replace('.', ',')}`;
+            elements.saturdayTotal.textContent = `R$ ${weekTotals[6].toFixed(2).replace('.', ',')}`;
+            elements.sundayTotal.textContent = `R$ ${weekTotals[0].toFixed(2).replace('.', ',')}`;
+            
+            // Renderizar lista de vendas
+            elements.salesHistoryList.innerHTML = '';
+            
+            if (salesHistory.length === 0) {
+                elements.salesHistoryList.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="py-4 px-4 text-center text-gray-500">
+                            Nenhuma venda registrada ainda.
+                        </td>
+                    </tr>
+                `;
+                return;
             }
-        });
-        
-        console.log('📈 Totais por dia:', weekTotals);
-        
-        // Atualizar elementos do DOM - COM VERIFICAÇÃO
-        const formatValue = (value) => {
-            const num = parseFloat(value) || 0;
-            return `R$ ${num.toFixed(2).replace('.', ',')}`;
-        };
-        
-        elements.mondayTotal.textContent = formatValue(weekTotals[1]);
-        elements.tuesdayTotal.textContent = formatValue(weekTotals[2]);
-        elements.wednesdayTotal.textContent = formatValue(weekTotals[3]);
-        elements.thursdayTotal.textContent = formatValue(weekTotals[4]);
-        elements.fridayTotal.textContent = formatValue(weekTotals[5]);
-        elements.saturdayTotal.textContent = formatValue(weekTotals[6]);
-        elements.sundayTotal.textContent = formatValue(weekTotals[0]);
-        
-        // Renderizar lista de vendas
-        elements.salesHistoryList.innerHTML = '';
-        
-        if (!salesHistory || salesHistory.length === 0) {
-            elements.salesHistoryList.innerHTML = `
-                <tr>
-                    <td colspan="4" class="py-4 px-4 text-center text-gray-500">
-                        Nenhuma venda registrada ainda.
-                    </td>
-                </tr>
-            `;
-            return;
-        }
-        
-        // Ordenar por data (mais recente primeiro)
-        const sortedSales = [...salesHistory].sort((a, b) => {
-            try {
-                const dateA = new Date(a.date?.split('/').reverse().join('-')) || new Date(0);
-                const dateB = new Date(b.date?.split('/').reverse().join('-')) || new Date(0);
-                return dateB - dateA;
-            } catch {
-                return 0;
-            }
-        });
-        
-        console.log(`📋 ${sortedSales.length} vendas para renderizar`);
-        
-        sortedSales.forEach(sale => {
-            try {
+            
+            // Ordenar por data (mais recente primeiro)
+            const sortedSales = [...salesHistory].sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            sortedSales.forEach(sale => {
                 const dayNames = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
-                const dayName = dayNames[sale.dayOfWeek] || 'Desconhecido';
-                
-                // CORREÇÃO: Garantir que todos os valores existem
-                const saleDate = sale.date || 'Data desconhecida';
-                const saleItems = Array.isArray(sale.items) ? sale.items : [];
-                const totalQuantity = sale.totalQuantity || sale.total_quantity || 0;
-                const totalValue = parseFloat(sale.totalValue || sale.total_value) || 0;
-                
-                // Limitar itens mostrados
-                const itemsToShow = saleItems.slice(0, 3);
-                const hasMoreItems = saleItems.length > 3;
+                const dayName = dayNames[sale.dayOfWeek];
                 
                 const saleRow = document.createElement('tr');
                 saleRow.innerHTML = `
                     <td class="py-4 px-4">
-                        <div class="font-medium">${saleDate}</div>
+                        <div class="font-medium">${sale.date}</div>
                         <div class="text-sm text-gray-500">${dayName}</div>
                     </td>
                     <td class="py-4 px-4">
                         <div class="space-y-1">
-                            ${itemsToShow.map(item => {
-                                const productName = item.productName || item.title || 'Produto';
-                                const saborName = item.saborName || item.sabor || 'Sabor';
-                                const quantity = item.quantity || 0;
-                                return `
-                                    <div class="text-sm">
-                                        <span class="font-medium">${productName}</span> - ${saborName}
-                                        <span class="text-gray-500">(x${quantity})</span>
-                                    </div>
-                                `;
-                            }).join('')}
-                            ${hasMoreItems ? `
-                                <div class="text-sm text-gray-500">
-                                    +${saleItems.length - 3} mais itens
+                            ${sale.items.map(item => `
+                                <div class="text-sm">
+                                    <span class="font-medium">${item.productName}</span> - ${item.saborName}
+                                    <span class="text-gray-500">(x${item.quantity})</span>
                                 </div>
-                            ` : ''}
-                            ${saleItems.length === 0 ? `
-                                <div class="text-sm text-gray-500 italic">
-                                    Sem detalhes dos itens
-                                </div>
-                            ` : ''}
+                            `).join('')}
                         </div>
                     </td>
                     <td class="py-4 px-4">
-                        <span class="font-medium">${totalQuantity} itens</span>
+                        <span class="font-medium">${sale.totalQuantity} itens</span>
                     </td>
                     <td class="py-4 px-4">
-                        <span class="font-medium text-green-600">R$ ${totalValue.toFixed(2).replace('.', ',')}</span>
+                        <span class="font-medium text-green-600">R$ ${sale.totalValue.toFixed(2).replace('.', ',')}</span>
                     </td>
                 `;
                 
                 elements.salesHistoryList.appendChild(saleRow);
-            } catch (error) {
-                console.error('❌ Erro ao renderizar venda:', sale, error);
-            }
-        });
-        
-        console.log('✅ Histórico renderizado com sucesso!');
-        
-    } catch (error) {
-        console.error('❌ ERRO CRÍTICO em renderSalesHistory:', error);
-        elements.salesHistoryList.innerHTML = `
-            <tr>
-                <td colspan="4" class="py-4 px-4 text-center text-red-500">
-                    Erro ao carregar histórico. Verifique o console.
-                </td>
-            </tr>
-        `;
-    }
-}
+            });
+        }
 
         async function saveProducts() {
             if (!checkAuth()) {
@@ -4711,7 +4602,6 @@ async function addSaleToHistory(cartItems, total, deliveryType = '', customerNam
             document.body.style.overflow = 'auto';
         }
 
-        // CORREÇÃO COMPLETA: Função de checkout que garante histórico de vendas
         async function handleCheckout(e) {
             e.preventDefault();
             
@@ -4767,48 +4657,7 @@ async function addSaleToHistory(cartItems, total, deliveryType = '', customerNam
                 }
             }
             
-            // CORREÇÃO: 1. PRIMEIRO registrar no histórico de vendas
-            console.log('📝 1. Registrando venda no histórico...');
-            const saleRegistered = await addSaleToHistory(cart, total, deliveryType, name);
-            
-            if (!saleRegistered) {
-                console.warn('⚠️ Aviso: Venda não foi registrada no histórico, mas continuando processo...');
-            }
-            
-            // CORREÇÃO: 2. DEPOIS atualizar estoque
-            console.log('📦 2. Atualizando estoque...');
-            try {
-                const orderData = {
-                    items: cart,
-                    customer: {
-                        name: name,
-                        deliveryType: deliveryType,
-                        address: addressData,
-                        paymentMethod: paymentMethod,
-                        troco: trocoInfo,
-                        coupon: appliedCoupon ? appliedCoupon.code : null
-                    }
-                };
-                
-                const stockResponse = await fetch(`${API_BASE_URL}/api/orders/update-stock`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(orderData)
-                });
-                
-                if (!stockResponse.ok) {
-                    console.error('❌ Erro ao atualizar estoque:', await stockResponse.text());
-                } else {
-                    console.log('✅ Estoque atualizado com sucesso');
-                }
-            } catch (stockError) {
-                console.error('❌ Erro na requisição de estoque:', stockError);
-            }
-            
-            // CORREÇÃO: 3. FINALMENTE enviar para WhatsApp
-            console.log('📱 3. Enviando para WhatsApp...');
+            // Criar mensagem para WhatsApp
             let message = `Olá, gostaria de finalizar meu pedido:%0A%0A`;
             
             cart.forEach(item => {
@@ -4851,32 +4700,57 @@ async function addSaleToHistory(cartItems, total, deliveryType = '', customerNam
                 message += `${trocoInfo}%0A`;
             }
             
-            // CORREÇÃO: Redirecionar para WhatsApp
+            // CORREÇÃO: Redirecionar IMEDIATAMENTE para WhatsApp SEM aguardar resposta do backend
             const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${message}`;
+            
+            // Abrir WhatsApp em nova aba/guia para não interromper o processo
             window.open(whatsappUrl, '_blank');
             
-            // CORREÇÃO: 4. Limpar carrinho e atualizar interface
-            console.log('🔄 4. Limpando carrinho e atualizando interface...');
+            // REGISTRAR VENDA NO HISTÓRICO - AGORA FUNCIONA EM TODOS OS DISPOSITIVOS
+            await addSaleToHistory(cart, total);
             
-            // Salvar cópia do carrinho para recarregar produtos depois
-            const oldCart = [...cart];
+            // Enviar atualização de estoque em background (não bloquear o usuário)
+            try {
+                const orderData = {
+                    items: cart,
+                    customer: {
+                        name: name,
+                        deliveryType: deliveryType,
+                        address: addressData,
+                        paymentMethod: paymentMethod,
+                        troco: trocoInfo,
+                        coupon: appliedCoupon ? appliedCoupon.code : null
+                    }
+                };
+                
+                // Fazer a requisição de atualização de estoque SEM aguardar resposta
+                fetch(`${API_BASE_URL}/api/orders/update-stock`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(orderData)
+                }).then(response => {
+                    if (!response.ok) {
+                        console.error('❌ Erro ao atualizar estoque:', response.statusText);
+                    } else {
+                        console.log('✅ Estoque atualizado com sucesso');
+                    }
+                }).catch(error => {
+                    console.error('❌ Erro na requisição de estoque:', error);
+                });
+                
+            } catch (error) {
+                console.error('❌ Erro no processo de checkout:', error);
+            }
             
-            // Limpar carrinho
+            // Limpar carrinho e fechar modal IMEDIATAMENTE
             cart = [];
             updateCartUI();
-            
-            // Fechar modal
             closeCheckoutModal();
             elements.checkoutForm.reset();
             
-            // Recarregar dados para atualizar estoque na interface
-            console.log('🔄 Recarregando dados para atualizar estoque...');
-            await loadData();
-            
-            // Atualizar interface da loja
-            filterProducts();
-            
-            showToast('Pedido enviado para o WhatsApp! Venda registrada no histórico.', 'success');
+            showToast('Pedido enviado para o WhatsApp!', 'success');
         }
 
         function getPaymentMethodName(method) {
