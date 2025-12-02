@@ -3197,7 +3197,9 @@
         const today = new Date();
         const todayString = today.toLocaleDateString('pt-BR');
         
-        // Buscar vendas do dia atual do banco
+        console.log('📊 Buscando vendas para:', todayString);
+        
+        // Buscar vendas do dia atual
         const salesResponse = await fetch(`${API_BASE_URL}/api/sales-history`);
         const salesData = await salesResponse.json();
         
@@ -3206,90 +3208,153 @@
             return;
         }
         
-        // Filtrar vendas de hoje
+        console.log('📦 Total de vendas no sistema:', salesData.salesHistory.length);
+        
+        // **CORREÇÃO: Filtrar vendas de hoje corretamente**
         const todaySales = salesData.salesHistory.filter(sale => {
             if (!sale.date) return false;
-            // Verificar se a data da venda é hoje
-            return sale.date === todayString;
+            
+            // Normalizar data (remover hora se houver)
+            const saleDate = sale.date.split(' ')[0];
+            return saleDate === todayString;
         });
         
+        console.log('📅 Vendas de hoje encontradas:', todaySales.length);
+        
         if (todaySales.length === 0) {
-            showToast('Nenhuma venda registrada hoje ainda.', 'info');
-            return;
+            // Tentar buscar do localStorage como fallback
+            try {
+                const localSales = JSON.parse(localStorage.getItem('sales_backup') || '[]');
+                const localTodaySales = localSales.filter(sale => {
+                    if (!sale.date) return false;
+                    return sale.date === todayString || sale.date.includes(todayString);
+                });
+                
+                if (localTodaySales.length === 0) {
+                    showToast('Nenhuma venda registrada hoje ainda.', 'info');
+                    return;
+                }
+                
+                // Usar dados do localStorage
+                todaySales.push(...localTodaySales);
+                console.log('📁 Usando vendas do localStorage:', localTodaySales.length);
+            } catch (localError) {
+                showToast('Nenhuma venda registrada hoje ainda.', 'info');
+                return;
+            }
         }
         
-        // Calcular totais
+        // **CORREÇÃO: Calcular totais CORRETAMENTE**
+        let totalOrders = todaySales.length;
         let totalItems = 0;
         let totalValue = 0;
         let itemsDetails = [];
         
         todaySales.forEach(sale => {
-            totalItems += sale.totalQuantity || 0;
-            totalValue += parseFloat(sale.totalValue) || 0;
+            // **CORREÇÃO: Usar os nomes de campo CORRETOS**
+            const saleTotalQuantity = sale.totalQuantity || sale.total_quantity || 0;
+            const saleTotalValue = parseFloat(sale.totalValue || sale.total_value || 0);
             
+            totalItems += saleTotalQuantity;
+            totalValue += saleTotalValue;
+            
+            console.log('📊 Venda:', {
+                date: sale.date,
+                totalQuantity: saleTotalQuantity,
+                totalValue: saleTotalValue,
+                items: sale.items
+            });
+            
+            // Processar itens se existirem
             if (sale.items && Array.isArray(sale.items)) {
                 sale.items.forEach(item => {
+                    // **CORREÇÃO: Usar nomes de campo corretos dos itens**
+                    const productName = item.productName || item.title || 'Produto não identificado';
+                    const saborName = item.saborName || item.sabor || 'Sabor não identificado';
+                    const quantity = item.quantity || 0;
+                    const subtotal = parseFloat(item.subtotal || item.price * quantity || 0);
+                    
                     const existingItem = itemsDetails.find(i => 
-                        i.productName === item.productName && i.saborName === item.saborName
+                        i.productName === productName && i.saborName === saborName
                     );
                     
                     if (existingItem) {
-                        existingItem.quantity += item.quantity || 0;
-                        existingItem.subtotal += parseFloat(item.subtotal) || 0;
+                        existingItem.quantity += quantity;
+                        existingItem.subtotal += subtotal;
                     } else {
                         itemsDetails.push({
-                            productName: item.productName || 'Produto não identificado',
-                            saborName: item.saborName || 'Sabor não identificado',
-                            quantity: item.quantity || 0,
-                            subtotal: parseFloat(item.subtotal) || 0
+                            productName: productName,
+                            saborName: saborName,
+                            quantity: quantity,
+                            subtotal: subtotal
                         });
                     }
                 });
             }
         });
         
-        // Criar mensagem do relatório
-        let message = `📊 *RELATÓRIO DE VENDAS - DONA BROOKIES*\n\n`;
-        message += `*DATA:* ${todayString}\n`;
-        message += `*HORA DO RELATÓRIO:* ${today.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}\n\n`;
-        message += `📈 *RESUMO DO DIA*\n`;
-        message += `• Total de pedidos: ${todaySales.length}\n`;
-        message += `• Itens vendidos: ${totalItems}\n`;
-        message += `• Valor total: R$ ${totalValue.toFixed(2)}\n\n`;
+        console.log('💰 Totais calculados:', {
+            totalOrders,
+            totalItems,
+            totalValue,
+            itemsDetailsCount: itemsDetails.length
+        });
+        
+        // **CORREÇÃO: Criar mensagem do relatório CORRETA**
+        let message = `📊 *RELATÓRIO DE VENDAS - DONA BROOKIES*%0A%0A`;
+        
+        message += `*📅 DATA:* ${todayString}%0A`;
+        message += `*⏰ HORA DO RELATÓRIO:* ${today.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}%0A%0A`;
+        
+        message += `📈 *RESUMO DO DIA*%0A`;
+        message += `• Total de pedidos: ${totalOrders}%0A`;
+        message += `• Itens vendidos: ${totalItems}%0A`;
+        message += `• Valor total: R$ ${totalValue.toFixed(2)}%0A%0A`;
         
         // Adicionar detalhes dos produtos vendidos
         if (itemsDetails.length > 0) {
-            message += `🛍️ *DETALHAMENTO DOS PRODUTOS*\n`;
+            message += `🛍️ *DETALHAMENTO DOS PRODUTOS*%0A`;
             itemsDetails.forEach(item => {
-                message += `• ${item.productName} - ${item.saborName}\n`;
-                message += `  Quantidade: ${item.quantity} | Total: R$ ${item.subtotal.toFixed(2)}\n`;
+                message += `• ${item.productName} - ${item.saborName}%0A`;
+                message += `  📦 Quantidade: ${item.quantity} | 💰 Total: R$ ${item.subtotal.toFixed(2)}%0A`;
             });
-            message += `\n`;
+            message += `%0A`;
         }
         
         // Adicionar detalhes dos pedidos
-        message += `📋 *DETALHES DOS PEDIDOS*\n`;
+        message += `📋 *DETALHES DOS PEDIDOS*%0A`;
+        
         todaySales.forEach((sale, index) => {
-            message += `*Pedido ${index + 1}:*\n`;
-            message += `• Cliente: ${sale.customer_name || 'Não informado'}\n`;
-            message += `• Tipo: ${sale.delivery_type === 'entrega' ? 'Entrega' : 'Retirada'}\n`;
-            message += `• Itens: ${sale.totalQuantity || 0}\n`;
-            message += `• Total: R$ ${parseFloat(sale.totalValue || 0).toFixed(2)}\n`;
-            const saleTime = sale.created_at ? new Date(sale.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : 'Horário não registrado';
-            message += `• Hora: ${saleTime}\n\n`;
+            // **CORREÇÃO: Usar nomes de campo corretos**
+            const customerName = sale.customerName || sale.customer_name || 'Não informado';
+            const deliveryType = sale.deliveryType || sale.delivery_type || 'Retirada';
+            const saleQuantity = sale.totalQuantity || sale.total_quantity || 0;
+            const saleValue = parseFloat(sale.totalValue || sale.total_value || 0);
+            const saleTime = sale.created_at ? 
+                new Date(sale.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : 
+                'Horário não registrado';
+            
+            message += `*Pedido ${index + 1}:*%0A`;
+            message += `• 👤 Cliente: ${customerName}%0A`;
+            message += `• 📦 Tipo: ${deliveryType === 'entrega' ? 'Entrega' : 'Retirada'}%0A`;
+            message += `• 🛒 Itens: ${saleQuantity}%0A`;
+            message += `• 💰 Total: R$ ${saleValue.toFixed(2)}%0A`;
+            message += `• ⏰ Hora: ${saleTime}%0A%0A`;
         });
         
-        message += `💰 *TOTAL FINAL DO DIA: R$ ${totalValue.toFixed(2)}*\n\n`;
-        message += `_Relatório enviado automaticamente pelo sistema Dona Brookies_`;
+        message += `💰 *TOTAL FINAL DO DIA: R$ ${totalValue.toFixed(2)}*%0A%0A`;
+        message += `_📱 Relatório enviado automaticamente pelo sistema Dona Brookies_`;
+        
+        console.log('💬 Mensagem do relatório criada');
         
         // Enviar via proxy
         const whatsappResponse = await sendWhatsAppMessageViaProxy(
             whatsappConfig.whatsappNumber,
-            message
+            decodeURIComponent(message) // Decodificar antes de enviar
         );
         
         if (whatsappResponse.success) {
-            showToast('Relatório de hoje enviado com sucesso!', 'success');
+            showToast('Relatório enviado com sucesso!', 'success');
             
             // Atualizar último relatório enviado
             whatsappConfig.lastReportSent = new Date();
@@ -4772,25 +4837,20 @@ async function addSaleToHistory(cartItems, total, deliveryType = '', customerNam
         // CORREÇÃO COMPLETA: Função de checkout que garante histórico de vendas
         // CORREÇÃO COMPLETA: Função de checkout que garante histórico de vendas E redireciona para WhatsApp
  // CORREÇÃO PARA MOBILE: Função de checkout que funciona no celular e PWA
+// CORREÇÃO COMPLETA: Função de checkout que atualiza estoque ANTES de redirecionar
+// VERSÃO OTIMIZADA: Redirecionamento instantâneo para WhatsApp
 async function handleCheckout(e) {
     e.preventDefault();
     
-    console.log('📱 CHECKOUT NO CELULAR - INICIANDO...');
+    console.log('⚡ CHECKOUT RÁPIDO - INICIANDO...');
     
-    // Verificar se estamos em dispositivo móvel
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    console.log('📱 É dispositivo móvel?', isMobile);
-    
-    // Verificar se é PWA
     const isPWA = window.matchMedia('(display-mode: standalone)').matches || 
                   window.navigator.standalone === true;
-    console.log('📱 É PWA?', isPWA);
     
     const name = elements.customerName.value;
     const deliveryType = document.querySelector('input[name="delivery-type"]:checked')?.value;
     const paymentMethod = elements.paymentMethod.value;
-    
-    console.log('📋 Dados do pedido:', { name, deliveryType, paymentMethod });
     
     if (!name || !deliveryType || !paymentMethod) {
         showToast('Por favor, preencha todos os campos obrigatórios.', 'warning');
@@ -4799,7 +4859,6 @@ async function handleCheckout(e) {
     
     let addressData = {};
     let total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    let deliveryFee = 0;
     
     if (deliveryType === 'entrega') {
         const street = elements.street.value;
@@ -4815,12 +4874,10 @@ async function handleCheckout(e) {
         addressData = { street, number, neighborhood, complement };
         
         if (!appliedCoupon) {
-            deliveryFee = DELIVERY_FEE;
-            total += deliveryFee;
+            total += DELIVERY_FEE;
         }
     }
     
-    // Verificar se precisa de troco
     let trocoInfo = '';
     if (paymentMethod === 'cash') {
         const precisaTroco = document.querySelector('input[name="troco"]:checked')?.value;
@@ -4834,35 +4891,22 @@ async function handleCheckout(e) {
         }
     }
     
-    // 1. Registrar no histórico de vendas
-    console.log('📝 Registrando venda no histórico...');
-    await addSaleToHistory(cart, total, deliveryType, name);
+    // **OTIMIZAÇÃO: Salvar dados do pedido localmente primeiro**
+    const pedidoId = Date.now(); // ID único para o pedido
+    const pedidoData = {
+        id: pedidoId,
+        items: JSON.parse(JSON.stringify(cart)), // Cópia do carrinho
+        total: total,
+        customer: { name, deliveryType, address: addressData, paymentMethod, troco: trocoInfo },
+        timestamp: new Date().toISOString()
+    };
     
-    // 2. Atualizar estoque (em background, não bloquear o usuário)
-    setTimeout(async () => {
-        try {
-            const orderData = {
-                items: cart,
-                customer: { name, deliveryType, address: addressData, paymentMethod, troco: trocoInfo, coupon: appliedCoupon?.code }
-            };
-            
-            await fetch(`${API_BASE_URL}/api/orders/update-stock`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(orderData)
-            });
-            console.log('✅ Estoque atualizado');
-        } catch (error) {
-            console.error('❌ Erro no estoque:', error);
-        }
-    }, 100);
+    // Salvar pedido pendente no localStorage
+    localStorage.setItem(`pedido_pendente_${pedidoId}`, JSON.stringify(pedidoData));
     
-    // 3. CRIAR MENSAGEM PARA WHATSAPP
-    console.log('💬 Criando mensagem para WhatsApp...');
-    
+    // **OTIMIZAÇÃO: Criar mensagem do WhatsApp (SÍNCRONO - RÁPIDO)**
     let message = `*📦 NOVO PEDIDO - DONA BROOKIES*%0A%0A`;
     
-    // Itens do pedido
     message += `*🛒 ITENS DO PEDIDO:*%0A`;
     cart.forEach((item, index) => {
         const itemTotal = (item.price * item.quantity).toFixed(2);
@@ -4873,175 +4917,133 @@ async function handleCheckout(e) {
     });
     
     message += `*💰 TOTAL: R$ ${total.toFixed(2)}*%0A%0A`;
-    
-    // Dados do cliente
-    message += `*👤 DADOS DO CLIENTE:*%0A`;
-    message += `👨‍🍳 Nome: ${name}%0A`;
+    message += `*👤 CLIENTE:* ${name}%0A`;
     
     if (deliveryType === 'entrega') {
-        message += `%0A*📦 ENTREGA EM CASA*%0A`;
-        message += `📍 Endereço: ${addressData.street}, ${addressData.number}%0A`;
-        message += `🏘️ Bairro: ${addressData.neighborhood}%0A`;
+        message += `*📦 ENTREGA EM CASA*%0A`;
+        message += `📍 ${addressData.street}, ${addressData.number}%0A`;
+        message += `🏘️ ${addressData.neighborhood}%0A`;
         if (addressData.complement) {
-            message += `🏠 Complemento: ${addressData.complement}%0A`;
+            message += `🏠 ${addressData.complement}%0A`;
         }
         if (appliedCoupon) {
-            message += `🎫 Cupom: ${appliedCoupon.code} - *FRETE GRÁTIS*%0A`;
-        } else {
-            message += `🚚 Taxa de entrega: R$ ${DELIVERY_FEE.toFixed(2)}%0A`;
+            message += `🎫 ${appliedCoupon.code} - FRETE GRÁTIS%0A`;
         }
     } else {
-        message += `%0A*🏪 RETIRADA NA LOJA*%0A`;
+        message += `*🏪 RETIRADA NA LOJA*%0A`;
         message += `📍 R. André Elias Pereira, nº 221%0A`;
-        message += `   Centro - Rua do Bar do Vaqueiro%0A`;
     }
     
-    message += `%0A*💳 PAGAMENTO:* ${getPaymentMethodName(paymentMethod)}%0A`;
+    message += `*💳 PAGAMENTO:* ${getPaymentMethodName(paymentMethod)}%0A`;
     
     if (paymentMethod === 'pix') {
-        message += `%0A*🔐 DADOS PIX:*%0A`;
-        message += `   Chave: 125.707.164-56%0A`;
-        message += `   Nome: Myrella Luiza%0A`;
-        message += `⚠️ *Enviar comprovante*%0A`;
+        message += `*🔐 PIX:* 125.707.164-56 (Myrella Luiza)%0A`;
     }
     
     if (trocoInfo) {
-        message += `%0A${trocoInfo}%0A`;
+        message += `${trocoInfo}%0A`;
     }
     
-    message += `%0A⏰ *Data/hora:* ${new Date().toLocaleString('pt-BR')}%0A`;
-    message += `%0A_📱 Pedido via site/app Dona Brookies_`;
+    message += `⏰ ${new Date().toLocaleString('pt-BR')}%0A`;
     
-    // 4. MÉTODOS ESPECÍFICOS PARA MOBILE/PWA
-    console.log('📱 Dispositivo detectado:', {
-        userAgent: navigator.userAgent,
-        isMobile: isMobile,
-        isPWA: isPWA
-    });
-    
-    // CORREÇÃO PARA MOBILE: Fechar modal e limpar carrinho primeiro
-    closeCheckoutModal();
-    
-    // Salvar cópia do carrinho
-    const oldCart = [...cart];
-    
-    // Limpar carrinho
+    // **OTIMIZAÇÃO: Limpar interface instantaneamente**
     cart = [];
     updateCartUI();
+    closeCheckoutModal();
     
-    // Resetar formulário
-    elements.checkoutForm.reset();
+    // **OTIMIZAÇÃO: Redirecionar para WhatsApp IMEDIATAMENTE**
+    const whatsappNumber = "5584996933713";
+    const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${message}`;
     
-    // Mostrar mensagem de sucesso
-    showToast('Abrindo WhatsApp...', 'success');
+    console.log('⚡ Redirecionando IMEDIATAMENTE para WhatsApp...');
     
-    // Aguardar um pouco para o modal fechar
-    setTimeout(() => {
-        console.log('🚀 Iniciando redirecionamento para WhatsApp...');
-        
-        // Número do WhatsApp CORRETO: (84) 99693-3713
-        const whatsappNumber = "5584996933713";
-        const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${message}`;
-        
-        console.log('🔗 URL do WhatsApp:', whatsappUrl.substring(0, 150) + '...');
-        
-        // MÉTODO 1: Para PWA/Apps instalados (usa window.open com _system no cordova, mas vamos usar fallback)
-        if (isPWA) {
-            console.log('📱 Usando método para PWA...');
+    // Abrir WhatsApp de forma instantânea
+    if (isMobile || isPWA) {
+        // Para mobile: usar location.href é o mais rápido
+        window.location.href = whatsappUrl;
+    } else {
+        // Para desktop
+        window.open(whatsappUrl, '_blank');
+    }
+    
+    // **OTIMIZAÇÃO: Processar estoque e histórico EM SEGUNDO PLANO (async)**
+    setTimeout(async () => {
+        try {
+            console.log('⚙️ Processando estoque e histórico em segundo plano...');
             
-            // Tentar abrir normalmente
-            const newWindow = window.open(whatsappUrl, '_blank');
+            // 1. Registrar venda no histórico
+            const saleData = {
+                date: new Date().toLocaleDateString('pt-BR'),
+                items: pedidoData.items.map(item => ({
+                    productName: item.title,
+                    saborName: item.saborName,
+                    quantity: item.quantity,
+                    subtotal: item.price * item.quantity
+                })),
+                totalQuantity: pedidoData.items.reduce((sum, item) => sum + item.quantity, 0),
+                totalValue: pedidoData.total,
+                customerName: name,
+                deliveryType: deliveryType
+            };
             
-            // Se não abriu, tentar métodos alternativos
-            if (!newWindow) {
-                console.log('⚠️ Método 1 falhou, tentando método 2...');
-                
-                // MÉTODO 2: Usar location.href (funciona em muitos celulares)
-                setTimeout(() => {
-                    window.location.href = whatsappUrl;
-                }, 100);
-                
-                // Fallback se ainda não funcionar
-                setTimeout(() => {
-                    console.log('⚠️ Método 2 falhou, mostrando link...');
-                    
-                    // MÉTODO 3: Mostrar link para o usuário clicar
-                    const shouldContinue = confirm(
-                        'Clique em OK para abrir o WhatsApp manualmente. ' +
-                        'Depois clique em "Continuar" no WhatsApp para enviar o pedido.'
-                    );
-                    
-                    if (shouldContinue) {
-                        // Criar link temporário
-                        const tempLink = document.createElement('a');
-                        tempLink.href = whatsappUrl;
-                        tempLink.target = '_blank';
-                        tempLink.rel = 'noopener noreferrer';
-                        tempLink.style.cssText = `
-                            position: fixed;
-                            top: 0;
-                            left: 0;
-                            width: 100%;
-                            height: 100%;
-                            z-index: 999999;
-                            opacity: 0;
-                        `;
-                        document.body.appendChild(tempLink);
-                        tempLink.click();
-                        
-                        // Remover após uso
-                        setTimeout(() => {
-                            document.body.removeChild(tempLink);
-                        }, 1000);
-                    }
-                }, 2000);
-            }
-        } 
-        // MÉTODO PARA MOBILE NORMAL (navegador)
-        else if (isMobile) {
-            console.log('📱 Usando método para mobile...');
+            // Salvar localmente primeiro (rápido)
+            let localSales = JSON.parse(localStorage.getItem('sales_backup') || '[]');
+            localSales.push(saleData);
+            localStorage.setItem('sales_backup', JSON.stringify(localSales));
             
-            // Primeiro tentar com window.open
-            const w = window.open(whatsappUrl, '_blank');
-            
-            // Se falhar, usar location.href
-            if (!w) {
-                console.log('⚠️ window.open falhou, usando location.href...');
-                setTimeout(() => {
-                    window.location.href = whatsappUrl;
-                }, 100);
+            // Tentar salvar no backend (pode falhar, não é crítico)
+            try {
+                await fetch(`${API_BASE_URL}/api/sales-history`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ saleData })
+                });
+            } catch (apiError) {
+                console.log('⚠️ API falhou, mas temos backup local');
             }
             
-            // Fallback final
-            setTimeout(() => {
-                console.log('⚠️ Mostrando instruções...');
+            // 2. Atualizar estoque
+            try {
+                const stockResponse = await fetch(`${API_BASE_URL}/api/orders/update-stock`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ items: pedidoData.items })
+                });
                 
-                // Armazenar mensagem no localStorage para backup
-                localStorage.setItem('last_whatsapp_message', decodeURIComponent(message));
-                
-                // Mostrar instruções
-                showToast(
-                    'Se o WhatsApp não abriu, copie esta mensagem e cole no WhatsApp: ' +
-                    '(84) 99693-3713',
-                    'info',
-                    5000
-                );
-            }, 3000);
+                if (stockResponse.ok) {
+                    console.log('✅ Estoque atualizado em segundo plano');
+                    
+                    // Atualizar interface quando o usuário voltar
+                    setTimeout(async () => {
+                        await loadData();
+                        filterProducts();
+                    }, 2000);
+                }
+            } catch (stockError) {
+                console.error('❌ Erro no estoque em segundo plano:', stockError);
+            }
+            
+            // 3. Remover pedido pendente
+            localStorage.removeItem(`pedido_pendente_${pedidoId}`);
+            
+        } catch (error) {
+            console.error('❌ Erro em segundo plano:', error);
         }
-        // MÉTODO PARA DESKTOP
-        else {
-            console.log('💻 Usando método para desktop...');
+    }, 100); // Pequeno delay para não bloquear o redirecionamento
+    
+    // **OTIMIZAÇÃO: Se o redirecionamento falhar, mostrar fallback**
+    setTimeout(() => {
+        // Verificar se ainda estamos na mesma página (redirecionamento falhou)
+        if (!document.hidden) {
+            console.log('⚠️ Redirecionamento pode ter falhado, mostrando fallback...');
+            
+            const fallbackMessage = `Pedido processado! Abra o WhatsApp e envie para (84) 99693-3713: ${message.substring(0, 200)}...`;
+            showToast(fallbackMessage, 'info', 5000);
+            
+            // Tentar abrir novamente
             window.open(whatsappUrl, '_blank');
         }
-        
-        // 5. Recarregar produtos para atualizar estoque
-        setTimeout(async () => {
-            console.log('🔄 Atualizando interface...');
-            await loadData();
-            filterProducts();
-        }, 3000);
-        
-    }, 300); // Pequeno delay para garantir que o modal fechou
+    }, 3000);
 }
 
 // Função auxiliar para detectar se é iOS
