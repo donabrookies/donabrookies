@@ -3700,27 +3700,24 @@
 
         // ===== INICIALIZAÇÃO =====
         async function init() {
-    if (!isStandaloneApp()) {
-        hideWelcomeScreen();
-    }
+            if (!isStandaloneApp()) {
+                hideWelcomeScreen();
+            }
 
-    await loadData();
-    setupRouting();
-    setupEventListeners();
+            await loadData();
+            setupRouting();
+            setupEventListeners();
 
-    renderCategoryFilters();
-    updateCartUI();
-    renderCategories();
-    updateCategorySelects();
+            renderCategoryFilters();
+            updateCartUI();
+            renderCategories();
+            updateCategorySelects();
 
-    showStoreView();
-    
-    // Sincronizar vendas pendentes ao iniciar
-    syncPendingSales();
-    
-    // Sincronizar atualizações de estoque pendentes
-    syncPendingStockUpdates();
-}
+            showStoreView();
+            // Sincronizar vendas pendentes ao iniciar
+            syncPendingSales();
+        }
+
         // ===== CONFIGURAÇÃO DE EVENT LISTENERS =====
         function setupEventListeners() {
             elements.loginBtn.addEventListener('click', handleLogin);
@@ -4602,76 +4599,25 @@
             elements.checkoutModal.classList.add('hidden');
             document.body.style.overflow = 'auto';
         }
-        async function saveOrderLocally(cartBackup, productsOnlyTotal, deliveryType, name, paymentMethod, addressData, trocoInfo, appliedCoupon) {
-            console.log('💾 Salvando pedido LOCALMENTE como backup...');
-
-            // Salvar venda pendente no localStorage
-            const pendingSales = JSON.parse(localStorage.getItem('pending_sales') || '[]');
-            pendingSales.push({
-                cartBackup: cartBackup,
-                customerName: name,
-                deliveryType: deliveryType,
-                paymentMethod: paymentMethod,
-                totalValue: productsOnlyTotal,
-                address: addressData,
-                timestamp: Date.now()
-            });
-            localStorage.setItem('pending_sales', JSON.stringify(pendingSales));
-
-            // Salvar no histórico local
-            await addSaleToHistory(cartBackup, productsOnlyTotal, deliveryType, name, paymentMethod);
-
-            // Atualizar interfaces
-            filterProducts();
-            renderAdminProducts();
-            updateAdminDashboard();
-
-            showToast('Pedido salvo localmente. Será sincronizado em breve.', 'warning');
-        }
-        async function syncPendingStockUpdates() {
-            const pendingSales = JSON.parse(localStorage.getItem('pending_sales') || '[]');
-
-            if (pendingSales.length === 0) return;
-
-            console.log(`🔄 Sincronizando ${pendingSales.length} pedidos pendentes com o backend...`);
-
-            for (let i = 0; i < pendingSales.length; i++) {
-                const sale = pendingSales[i];
-
-                try {
-                    // Preparar atualizações de estoque
-                    const stockUpdates = [];
-                    for (const item of sale.cartBackup) {
-                        stockUpdates.push({
-                            productId: item.id,
-                            saborIndex: item.saborIndex,
-                            quantity: item.quantity
-                        });
-                    }
-
-                    const response = await fetch(`${API_BASE_URL}/api/orders/update-stock`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ items: stockUpdates })
-                    });
-
-                    if (response.ok) {
-                        console.log(`✅ Pedido pendente ${i + 1} sincronizado!`);
-                        pendingSales.splice(i, 1);
-                        i--;
-                    }
-                } catch (error) {
-                    console.error(`❌ Erro ao sincronizar pedido pendente:`, error);
-                }
-            }
-
-            localStorage.setItem('pending_sales', JSON.stringify(pendingSales));
-        }
 
         async function handleCheckout(e) {
     e.preventDefault();
 
-    console.log('⚡ CHECKOUT RÁPIDO - INICIANDO...');
+    // 🔒 PREVENIR MÚLTIPLOS CLIQUE - DESABILITAR BOTÃO IMEDIATAMENTE
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    
+    // Verificar se o botão já está desabilitado (evita execução duplicada)
+    if (submitBtn.disabled) {
+        console.log('⏳ Botão já desabilitado, ignorando clique duplicado');
+        return;
+    }
+    
+    // Desabilitar botão imediatamente e mudar texto
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Processando...';
+
+    console.log('⚡ CHECKOUT - INICIANDO...');
 
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     const isPWA = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
@@ -4682,6 +4628,9 @@
 
     if (!name || !deliveryType || !paymentMethod) {
         showToast('Por favor, preencha todos os campos obrigatórios.', 'warning');
+        // Reabilitar botão se houver erro de validação
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
         return;
     }
 
@@ -4696,6 +4645,8 @@
 
         if (!street || !number || !neighborhood) {
             showToast('Por favor, preencha todos os campos de endereço obrigatórios.', 'warning');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
             return;
         }
 
@@ -4711,179 +4662,249 @@
             const trocoValue = elements.trocoValue.value;
             if (!trocoValue || parseFloat(trocoValue) <= total) {
                 showToast('Para precisar de troco, o valor informado deve ser maior que o total do pedido.', 'warning');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
                 return;
             }
             trocoInfo = `Troco para: R$ ${parseFloat(trocoValue).toFixed(2)}`;
         }
     }
 
-    // FAZER BACKUP DO CARRINHO
+    // FAZER BACKUP DO CARRINHO ANTES DE QUALQUER OPERAÇÃO
     const cartBackup = JSON.parse(JSON.stringify(cart));
     const productsOnlyTotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
-    // CONSTRUIR MENSAGEM DO WHATSAPP IMEDIATAMENTE
-    let message = `*NOVO PEDIDO - DONA BROOKIES*%0A%0A`;
-    message += `*ITENS DO PEDIDO:*%0A`;
-    cartBackup.forEach((item, index) => {
-        const itemTotal = (item.price * item.quantity).toFixed(2);
-        message += `${index + 1}. ${item.title}%0A`;
-        message += `   Sabor: ${item.saborName}%0A`;
-        message += `   Quantidade: ${item.quantity} un.%0A`;
-        message += `   Valor: R$ ${itemTotal}%0A%0A`;
-    });
+    // === PRIMEIRO: SALVAR NO BANCO DE DADOS ===
+    console.log('📤 Atualizando estoque no backend...');
     
-    let deliveryFeeMessage = '';
-    if (deliveryType === 'entrega') {
-        if (!appliedCoupon) {
-            deliveryFeeMessage = `%0A*Taxa de entrega:* R$ ${DELIVERY_FEE.toFixed(2)}%0A`;
-        } else {
-            deliveryFeeMessage = `%0A*Frete:* GRÁTIS (Cupom: ${appliedCoupon.code})%0A`;
+    // Preparar dados de estoque para enviar
+    const stockUpdates = [];
+    for (const item of cart) {
+        const product = products.find(p => p.id === item.id);
+        if (product && product.sabores[item.saborIndex]) {
+            const newQuantity = product.sabores[item.saborIndex].quantity - item.quantity;
+            stockUpdates.push({
+                id: item.id,
+                saborIndex: item.saborIndex,
+                quantity: item.quantity,
+                newQuantity: newQuantity
+            });
         }
     }
-    message += deliveryFeeMessage;
-    message += `* TOTAL: R$ ${total.toFixed(2)}*%0A%0A`;
-    message += `* CLIENTE:* ${name}%0A`;
     
-    if (deliveryType === 'entrega') {
-        message += `* ENTREGA EM CASA*%0A`;
-        message += ` ${addressData.street}, ${addressData.number}%0A`;
-        message += ` ${addressData.neighborhood}%0A`;
-        if (addressData.complement) message += ` ${addressData.complement}%0A`;
-        if (appliedCoupon) message += ` ${appliedCoupon.code} - FRETE GRÁTIS%0A`;
-    } else {
-        message += `* RETIRADA NA LOJA*%0A`;
-        message += ` R. André Elias Pereira, nº 221%0A`;
-    }
+    // Preparar dados da venda
+    const saleData = {
+        items: cart.map(item => ({
+            productId: item.id,
+            productName: item.title,
+            saborName: item.saborName,
+            quantity: item.quantity,
+            price: item.price,
+            subtotal: item.price * item.quantity
+        })),
+        totalQuantity: cart.reduce((sum, item) => sum + item.quantity, 0),
+        totalValue: productsOnlyTotal,
+        customerName: name,
+        deliveryType: deliveryType,
+        paymentMethod: paymentMethod,
+        address: addressData,
+        deliveryFee: (deliveryType === 'entrega' && !appliedCoupon) ? DELIVERY_FEE : 0,
+        couponApplied: appliedCoupon ? appliedCoupon.code : null,
+        date: new Date().toISOString()
+    };
     
-    message += `* PAGAMENTO:* ${getPaymentMethodName(paymentMethod)}%0A`;
-    if (paymentMethod === 'pix') message += `* PIX:* 125.707.164-56 (Myrella Luiza)%0A`;
-    if (trocoInfo) message += `${trocoInfo}%0A`;
-    message += ` ${new Date().toLocaleString('pt-BR')}%0A`;
-    
-    const whatsappNumber = "5584996933713";
-    const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${message}`;
-
-    // PRIMEIRO: ABRIR WHATSAPP IMEDIATAMENTE
-    if (isMobile || isPWA) {
-        window.location.href = whatsappUrl;
-    } else {
-        window.open(whatsappUrl, '_blank');
-    }
-    
-    // FECHAR MODAL E LIMPAR CARRINHO IMEDIATAMENTE
-    closeCheckoutModal();
-    
-    // MOSTRAR TOAST DE SUCESSO
-    showToast('Pedido enviado! Redirecionando para WhatsApp...', 'success');
-    
-    // SEGUNDO: ATUALIZAR ESTOQUE LOCALMENTE E SALVAR EM BACKGROUND
-    setTimeout(async () => {
-        try {
-            console.log('📤 Salvando pedido em background...');
+    try {
+        // Enviar requisição para atualizar estoque E salvar venda
+        console.log('📤 Enviando para API...');
+        
+        const response = await fetch(`${API_BASE_URL}/api/checkout`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                cart: cart,
+                stockUpdates: stockUpdates,
+                saleData: saleData
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            console.log('✅ Venda e estoque salvos no backend com sucesso!');
             
-            // PRIMEIRO: ATUALIZAR ESTOQUE LOCALMENTE
-            for (const item of cartBackup) {
+            // Agora que o backend salvou, atualizar localmente
+            for (const item of cart) {
                 const product = products.find(p => p.id === item.id);
-                if (product && product.sabores && product.sabores[item.saborIndex]) {
-                    const currentStock = product.sabores[item.saborIndex].quantity || 0;
-                    product.sabores[item.saborIndex].quantity = Math.max(0, currentStock - item.quantity);
-                    console.log(`📦 ${product.title} - ${product.sabores[item.saborIndex].name}: ${currentStock} -> ${product.sabores[item.saborIndex].quantity}`);
+                if (product && product.sabores[item.saborIndex]) {
+                    product.sabores[item.saborIndex].quantity = Math.max(0, product.sabores[item.saborIndex].quantity - item.quantity);
                 }
             }
             
-            // ATUALIZAR INTERFACES LOCALMENTE
+            // Salvar no histórico local
+            await addSaleToHistory(cart, productsOnlyTotal, deliveryType, name, paymentMethod);
+            
+            // Atualizar interfaces
             filterProducts();
             renderAdminProducts();
             updateAdminDashboard();
             
-            // SALVAR NO HISTÓRICO LOCAL
-            await addSaleToHistory(cartBackup, productsOnlyTotal, deliveryType, name, paymentMethod);
-            
-            // TENTAR SALVAR NO BACKEND
-            try {
-                console.log('🔄 Sincronizando com backend...');
-                
-                // Preparar produtos atualizados para enviar ao backend
-                const productsToSync = products.map(p => ({
-                    id: p.id,
-                    title: p.title,
-                    category: p.category,
-                    price: p.price,
-                    description: p.description,
-                    status: p.status,
-                    sabores: p.sabores,
-                    display_order: p.display_order || 0
-                }));
-                
-                // Salvar produtos no backend
-                const saveResponse = await fetch(`${API_BASE_URL}/api/products`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${authToken}`
-                    },
-                    body: JSON.stringify({ products: productsToSync })
-                });
-                
-                if (saveResponse.ok) {
-                    console.log('✅ Estoque sincronizado com o backend!');
-                } else {
-                    console.log('⚠️ Erro ao sincronizar estoque, salvando localmente');
-                    // Salvar no localStorage para sincronizar depois
-                    const pendingStock = JSON.parse(localStorage.getItem('pending_stock_updates') || '[]');
-                    pendingStock.push({
-                        cartBackup: cartBackup,
-                        timestamp: Date.now()
-                    });
-                    localStorage.setItem('pending_stock_updates', JSON.stringify(pendingStock));
-                }
-                
-                // Salvar venda no backend
-                const saleDataForBackend = {
-                    items: cartBackup.map(item => ({
-                        productId: item.id,
-                        productName: item.title,
-                        saborName: item.saborName,
-                        quantity: item.quantity,
-                        price: item.price,
-                        subtotal: item.price * item.quantity
-                    })),
-                    totalQuantity: cartBackup.reduce((sum, item) => sum + item.quantity, 0),
-                    totalValue: productsOnlyTotal,
-                    customerName: name,
-                    deliveryType: deliveryType,
-                    paymentMethod: paymentMethod,
-                    date: new Date().toISOString()
-                };
-                
-                await fetch(`${API_BASE_URL}/api/sales-history`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ saleData: saleDataForBackend })
-                });
-                
-                console.log('✅ Venda registrada no backend!');
-                
-            } catch (apiError) {
-                console.error('❌ Erro ao sincronizar com backend:', apiError);
-                // Salvar atualização pendente
-                const pendingStock = JSON.parse(localStorage.getItem('pending_stock_updates') || '[]');
-                pendingStock.push({
-                    cartBackup: cartBackup,
-                    timestamp: Date.now()
-                });
-                localStorage.setItem('pending_stock_updates', JSON.stringify(pendingStock));
-            }
-            
             // Limpar carrinho
             cart = [];
             updateCartUI();
+            closeCheckoutModal();
             
-        } catch (error) {
-            console.error('❌ Erro em background:', error);
+            // Construir mensagem do WhatsApp usando o cartBackup
+            let message = `*NOVO PEDIDO - DONA BROOKIES*%0A%0A`;
+            message += `*ITENS DO PEDIDO:*%0A`;
+            cartBackup.forEach((item, index) => {
+                const itemTotal = (item.price * item.quantity).toFixed(2);
+                message += `${index + 1}. ${item.title}%0A`;
+                message += `   Sabor: ${item.saborName}%0A`;
+                message += `   Quantidade: ${item.quantity} un.%0A`;
+                message += `   Valor: R$ ${itemTotal}%0A%0A`;
+            });
+            
+            let deliveryFeeMessage = '';
+            if (deliveryType === 'entrega') {
+                if (!appliedCoupon) {
+                    deliveryFeeMessage = `%0A*Taxa de entrega:* R$ ${DELIVERY_FEE.toFixed(2)}%0A`;
+                } else {
+                    deliveryFeeMessage = `%0A*Frete:* GRÁTIS (Cupom: ${appliedCoupon.code})%0A`;
+                }
+            }
+            message += deliveryFeeMessage;
+            message += `* TOTAL: R$ ${total.toFixed(2)}*%0A%0A`;
+            message += `* CLIENTE:* ${name}%0A`;
+            
+            if (deliveryType === 'entrega') {
+                message += `* ENTREGA EM CASA*%0A`;
+                message += ` ${addressData.street}, ${addressData.number}%0A`;
+                message += ` ${addressData.neighborhood}%0A`;
+                if (addressData.complement) message += ` ${addressData.complement}%0A`;
+                if (appliedCoupon) message += ` ${appliedCoupon.code} - FRETE GRÁTIS%0A`;
+            } else {
+                message += `* RETIRADA NA LOJA*%0A`;
+                message += ` R. André Elias Pereira, nº 221%0A`;
+            }
+            
+            message += `* PAGAMENTO:* ${getPaymentMethodName(paymentMethod)}%0A`;
+            if (paymentMethod === 'pix') message += `* PIX:* 125.707.164-56 (Myrella Luiza)%0A`;
+            if (trocoInfo) message += `${trocoInfo}%0A`;
+            message += ` ${new Date().toLocaleString('pt-BR')}%0A`;
+            
+            const whatsappNumber = "5584996933713";
+            const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${message}`;
+            
+            if (isMobile || isPWA) {
+                window.location.href = whatsappUrl;
+            } else {
+                window.open(whatsappUrl, '_blank');
+            }
+            
+            showToast('Pedido finalizado com sucesso!', 'success');
+            
+        } else {
+            throw new Error(result.error || 'Erro ao processar pedido');
         }
-    }, 100);
+        
+    } catch (error) {
+        console.error('❌ Erro no checkout:', error);
+        showToast(`Erro ao processar pedido: ${error.message}. Tente novamente.`, 'error');
+        
+        // Reabilitar botão em caso de erro
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+        
+        // Backup: salvar localmente se o backend falhar
+        const saveLocally = confirm('Erro de conexão. Deseja salvar o pedido localmente e tentar enviar depois?');
+        if (saveLocally) {
+            // Salvar venda pendente no localStorage
+            const pendingSales = JSON.parse(localStorage.getItem('pending_sales') || '[]');
+            pendingSales.push({
+                ...saleData,
+                cartBackup: cartBackup,
+                timestamp: Date.now()
+            });
+            localStorage.setItem('pending_sales', JSON.stringify(pendingSales));
+            
+            // Atualizar estoque localmente mesmo assim
+            for (const item of cart) {
+                const product = products.find(p => p.id === item.id);
+                if (product && product.sabores[item.saborIndex]) {
+                    product.sabores[item.saborIndex].quantity = Math.max(0, product.sabores[item.saborIndex].quantity - item.quantity);
+                }
+            }
+            
+            // Salvar no histórico local
+            await addSaleToHistory(cart, productsOnlyTotal, deliveryType, name, paymentMethod);
+            
+            filterProducts();
+            renderAdminProducts();
+            updateAdminDashboard();
+            
+            // Construir mensagem do WhatsApp usando cartBackup
+            let message = `*NOVO PEDIDO - DONA BROOKIES*%0A%0A`;
+            message += `*ITENS DO PEDIDO:*%0A`;
+            cartBackup.forEach((item, index) => {
+                const itemTotal = (item.price * item.quantity).toFixed(2);
+                message += `${index + 1}. ${item.title}%0A`;
+                message += `   Sabor: ${item.saborName}%0A`;
+                message += `   Quantidade: ${item.quantity} un.%0A`;
+                message += `   Valor: R$ ${itemTotal}%0A%0A`;
+            });
+            
+            let deliveryFeeMessage = '';
+            if (deliveryType === 'entrega') {
+                if (!appliedCoupon) {
+                    deliveryFeeMessage = `%0A*Taxa de entrega:* R$ ${DELIVERY_FEE.toFixed(2)}%0A`;
+                } else {
+                    deliveryFeeMessage = `%0A*Frete:* GRÁTIS (Cupom: ${appliedCoupon.code})%0A`;
+                }
+            }
+            message += deliveryFeeMessage;
+            message += `* TOTAL: R$ ${total.toFixed(2)}*%0A%0A`;
+            message += `* CLIENTE:* ${name}%0A`;
+            
+            if (deliveryType === 'entrega') {
+                message += `* ENTREGA EM CASA*%0A`;
+                message += ` ${addressData.street}, ${addressData.number}%0A`;
+                message += ` ${addressData.neighborhood}%0A`;
+                if (addressData.complement) message += ` ${addressData.complement}%0A`;
+                if (appliedCoupon) message += ` ${appliedCoupon.code} - FRETE GRÁTIS%0A`;
+            } else {
+                message += `* RETIRADA NA LOJA*%0A`;
+                message += ` R. André Elias Pereira, nº 221%0A`;
+            }
+            
+            message += `* PAGAMENTO:* ${getPaymentMethodName(paymentMethod)}%0A`;
+            if (paymentMethod === 'pix') message += `* PIX:* 125.707.164-56 (Myrella Luiza)%0A`;
+            if (trocoInfo) message += `${trocoInfo}%0A`;
+            message += ` ${new Date().toLocaleString('pt-BR')}%0A`;
+            
+            const whatsappNumber = "5584996933713";
+            const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${message}`;
+            
+            if (isMobile || isPWA) {
+                window.location.href = whatsappUrl;
+            } else {
+                window.open(whatsappUrl, '_blank');
+            }
+            
+            cart = [];
+            updateCartUI();
+            closeCheckoutModal();
+            
+            showToast('Pedido salvo localmente. Será sincronizado quando a conexão恢复正常.', 'warning');
+        }
+    }
 }
+
         function getPaymentMethodName(method) {
             switch (method) {
                 case 'pix': return 'PIX';
@@ -5877,66 +5898,6 @@
                 console.log('✅ Todas as vendas pendentes foram sincronizadas!');
             }
         }
-
-        async function syncPendingStockUpdates() {
-    const pendingStock = JSON.parse(localStorage.getItem('pending_stock_updates') || '[]');
-    
-    if (pendingStock.length === 0) return;
-    
-    console.log(`🔄 Sincronizando ${pendingStock.length} atualizações de estoque pendentes...`);
-    
-    for (let i = 0; i < pendingStock.length; i++) {
-        const update = pendingStock[i];
-        
-        try {
-            // Aplicar atualização localmente primeiro
-            for (const item of update.cartBackup) {
-                const product = products.find(p => p.id === item.id);
-                if (product && product.sabores && product.sabores[item.saborIndex]) {
-                    const currentStock = product.sabores[item.saborIndex].quantity || 0;
-                    product.sabores[item.saborIndex].quantity = Math.max(0, currentStock - item.quantity);
-                }
-            }
-            
-            // Preparar produtos para sincronizar
-            const productsToSync = products.map(p => ({
-                id: p.id,
-                title: p.title,
-                category: p.category,
-                price: p.price,
-                description: p.description,
-                status: p.status,
-                sabores: p.sabores,
-                display_order: p.display_order || 0
-            }));
-            
-            // Salvar no backend
-            const response = await fetch(`${API_BASE_URL}/api/products`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${authToken}`
-                },
-                body: JSON.stringify({ products: productsToSync })
-            });
-            
-            if (response.ok) {
-                console.log(`✅ Atualização de estoque pendente ${i + 1} sincronizada!`);
-                pendingStock.splice(i, 1);
-                i--;
-            }
-        } catch (error) {
-            console.error(`❌ Erro ao sincronizar atualização pendente:`, error);
-        }
-    }
-    
-    localStorage.setItem('pending_stock_updates', JSON.stringify(pendingStock));
-    
-    // Atualizar interfaces
-    filterProducts();
-    renderAdminProducts();
-    updateAdminDashboard();
-}
 
         init();
     </script>
