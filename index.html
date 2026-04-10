@@ -311,7 +311,7 @@
         }
 
         .brand-texto {
-            color: var(--urbanz-light)
+            color: var(--urbanz-accent)
         }
 
         .brand-subtitle {
@@ -578,7 +578,7 @@
 
         /* Estilo para o botão Adicionar ao Carrinho */
         .add-to-cart-btn {
-            background-color: #a5784f !important;
+            background-color: #5b3715 !important;
             color: white !important;
             padding: 8px 16px !important;
             border-radius: 8px !important;
@@ -1430,7 +1430,7 @@
                 class="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">0</span>
         </button>
 
-        <footer class="border-t mt-12" style="background-color: var(--urbanz-dark);">
+        <footer class="border-t mt-12" style="background-color: var(--urbanz-bg);">
             <div class="container mx-auto px-4 py-8">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                     <div>
@@ -1439,37 +1439,37 @@
                                 style="height: 32px;">
                             <h3 class="font-bold text-lg brand-texto">Dona Brookies</h3>
                         </div>
-                        <p class="text-gray-600 text-sm" style="color: var(--urbanz-light);">Brownies e cookies feitos
+                        <p class="text-gray-600 text-sm" style="color: var(--urbanz-dark);">Brownies e cookies feitos
                             com amor e crocância!</p>
                     </div>
 
                     <div>
-                        <h4 class="font-semibold mb-4 " style="color: var(--urbanz-light)" ;>Contato </h4>
+                        <h4 class="font-semibold mb-4 " style="color: var(--urbanz-dark)" ;>Contato </h4>
                         <p class="text-gray-600 text-sm">
                             <i class="fas fa-whatsapp mr-2 text-green-500"></i>
-                            <span style="color: var(--urbanz-light);">(84) 99693-3713</span>
+                            <span style="color: var(--urbanz-accent);">(84) 99693-3713</span>
                         </p>
 
                     </div>
 
                     <div>
-                        <h4 class="font-semibold mb-4" style="color: var(--urbanz-light);">Redes Sociais</h4>
+                        <h4 class="font-semibold mb-4" style="color: var(--urbanz-accent);">Redes Sociais</h4>
                         <div class="flex gap-4">
-                            <a href="https://www.instagram.com/donabrookies/" style="color: var(--urbanz-light);"
+                            <a href="https://www.instagram.com/donabrookies/" style="color: var(--urbanz-accent);"
                                 class="hover:opacity-70">
                                 <i class="fab fa-instagram text-lg"></i>
                             </a>
-                            <a href="#" style="color: var(--urbanz-light);" class="hover:opacity-70">
+                            <a href="#" style="color: var(--urbanz-accent);" class="hover:opacity-70">
                                 <i class="fab fa-facebook text-lg"></i>
                             </a>
-                            <a href="#" style="color: var(--urbanz-light);" class="hover:opacity-70">
+                            <a href="#" style="color: var(--urbanz-accent);" class="hover:opacity-70">
                                 <i class="fab fa-twitter text-lg"></i>
                             </a>
                         </div>
                     </div>
                 </div>
 
-                <div class="border-t mt-8 pt-6 text-center text-sm" style="color: var(--urbanz-light);">
+                <div class="border-t mt-8 pt-6 text-center text-sm" style="color: var(--urbanz-accent);">
                     © 2025 Dona Brookies
                 </div>
             </div>
@@ -3566,319 +3566,113 @@
             }
         }
 
-        async function addSaleToHistory(cartItems, productsTotal, deliveryType, customerName, paymentMethod) {
-            try {
-                const today = new Date();
-                const todayString = today.toLocaleDateString('pt-BR');
-                const saleData = {
-                    id: Date.now(),
-                    date: todayString,
-                    created_at: today.toISOString(),
-                    dayOfWeek: today.getDay(),
-                    items: cartItems.map(item => ({
-                        productName: item.title,
-                        saborName: item.saborName,
-                        quantity: item.quantity,
-                        price: item.price,
-                        subtotal: item.price * item.quantity
-                    })),
-                    totalQuantity: cartItems.reduce((sum, item) => sum + item.quantity, 0),
-                    totalValue: productsTotal,  // SÓ O VALOR DOS PRODUTOS, SEM TAXA DE ENTREGA
-                    customerName: customerName,
-                    deliveryType: deliveryType,
-                    paymentMethod: paymentMethod
-                };
-                salesHistory.unshift(saleData);
-                await saveSalesHistory();
-                renderSalesHistory();
-                console.log('Venda registrada com sucesso!');
-                return true;
-            } catch (error) {
-                console.error('Erro ao registrar venda:', error);
-                return true;
+        // ===== FUNÇÃO CORRIGIDA PARA REGISTRAR VENDA NO HISTÓRICO =====
+async function addSaleToHistory(cartItems, productsTotal, deliveryType, customerName, paymentMethod) {
+    try {
+        const today = new Date();
+        const todayString = today.toLocaleDateString('pt-BR');
+
+        const saleData = {
+            id: Date.now(),
+            date: todayString,
+            created_at: today.toISOString(),
+            dayOfWeek: today.getDay(),
+            items: cartItems.map(item => ({
+                productName: item.title,
+                saborName: item.saborName,
+                quantity: item.quantity,
+                price: item.price,
+                subtotal: item.price * item.quantity
+            })),
+            totalQuantity: cartItems.reduce((sum, item) => sum + item.quantity, 0),
+            totalValue: productsTotal,
+            customerName: customerName,
+            deliveryType: deliveryType,
+            paymentMethod: paymentMethod
+        };
+
+        // 1. Salvar localmente (fallback)
+        let localSales = JSON.parse(localStorage.getItem('sales_backup') || '[]');
+        localSales.unshift(saleData);
+        if (localSales.length > 100) localSales = localSales.slice(0, 100);
+        localStorage.setItem('sales_backup', JSON.stringify(localSales));
+
+        // 2. Atualizar salesHistory global
+        salesHistory = [saleData, ...salesHistory];
+        renderSalesHistory();
+
+        // 3. Tentar enviar para o backend
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/sales-history`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ saleData })
+            });
+            const data = await response.json();
+            if (data.success) {
+                console.log('✅ Venda registrada no backend');
+            } else {
+                console.warn('⚠️ Backend recusou venda, mas salvamos localmente');
             }
+        } catch (apiError) {
+            console.warn('⚠️ API offline, venda salva apenas localmente', apiError);
         }
-        async function resetSalesHistory() {
-            if (confirm('Tem certeza que deseja limpar todo o histórico de vendas? Esta ação não pode ser desfeita.')) {
-                salesHistory = [];
-                await saveSalesHistory();
-                renderSalesHistory();
-                showToast('Histórico limpo!', 'success');
-            }
-        }
+
+        return true;
+    } catch (error) {
+        console.error('❌ Erro crítico em addSaleToHistory:', error);
+        return true;
+    }
+}
 
         function renderSalesHistory() {
-            if (!elements.salesHistoryList) return;
+    if (!elements.salesHistoryList) return;
 
-            let filteredSales = [...salesHistory];
-            if (currentDateFilter) {
-                filteredSales = filteredSales.filter(sale => sale.date === currentDateFilter);
-            }
+    let filteredSales = [...salesHistory];
+    if (currentDateFilter) {
+        filteredSales = filteredSales.filter(sale => sale.date === currentDateFilter);
+    }
 
-            const periodTotal = filteredSales.reduce((sum, sale) => sum + (sale.totalValue || 0), 0);
-            const periodTotalEl = document.getElementById('period-total');
-            if (periodTotalEl) periodTotalEl.textContent = `R$ ${periodTotal.toFixed(2).replace('.', ',')}`;
+    const periodTotal = filteredSales.reduce((sum, sale) => sum + (sale.totalValue || 0), 0);
+    const periodTotalEl = document.getElementById('period-total');
+    if (periodTotalEl) {
+        periodTotalEl.textContent = `R$ ${periodTotal.toFixed(2).replace('.', ',')}`;
+    }
 
-            const salesTotalCard = document.getElementById('sales-total-card');
-            if (salesTotalCard) {
-                salesTotalCard.style.display = filteredSales.length > 0 ? 'inline-block' : 'none';
-            }
+    const salesTotalCard = document.getElementById('sales-total-card');
+    if (salesTotalCard) {
+        salesTotalCard.style.display = filteredSales.length > 0 ? 'inline-block' : 'none';
+    }
 
-            if (filteredSales.length === 0) {
-                elements.salesHistoryList.innerHTML = `<tr><td colspan="5" class="py-4 px-4 text-center text-gray-500">Nenhuma venda registrada.</td></tr>`;
-                return;
-            }
+    if (filteredSales.length === 0) {
+        elements.salesHistoryList.innerHTML = `
+            <tr>
+                <td colspan="5" class="py-4 px-4 text-center text-gray-500">
+                    Nenhuma venda registrada no período. Total: R$ 0,00
+                </td>
+            </tr>
+        `;
+        return;
+    }
 
-            elements.salesHistoryList.innerHTML = '';
+    elements.salesHistoryList.innerHTML = '';
+    filteredSales.forEach(sale => {
+        const row = document.createElement('tr');
+        const dateTime = sale.created_at ? new Date(sale.created_at).toLocaleString('pt-BR') : sale.date;
+        const itemsHtml = (sale.items || []).map(item =>
+            `<span style="display: inline-block; background: #f3f4f6; padding: 0.125rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; margin-right: 0.5rem; margin-bottom: 0.25rem;">${item.productName} - ${item.saborName} (x${item.quantity})</span>`
+        ).join('');
 
-            filteredSales.forEach(sale => {
-                const row = document.createElement('tr');
-                const dateTime = sale.created_at ? new Date(sale.created_at).toLocaleString('pt-BR') : sale.date;
-                const itemsHtml = (sale.items || []).map(item =>
-                    `<span style="display: inline-block; background: #f3f4f6; padding: 0.125rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; margin-right: 0.5rem; margin-bottom: 0.25rem;">${item.productName} - ${item.saborName} (x${item.quantity})</span>`
-                ).join('');
-
-                row.innerHTML = `
+        row.innerHTML = `
             <td class="py-3 px-4 text-sm">${dateTime}</td>
             <td class="py-3 px-4 text-sm font-medium">${sale.customerName || 'Não informado'}</td>
             <td class="py-3 px-4 text-sm">${sale.paymentMethod || 'Não informado'}</td>
             <td class="py-3 px-4 text-sm"><div style="font-size: 0.875rem; color: #4b5563;">${itemsHtml || 'Sem itens'}</div></td>
             <td class="py-3 px-4 text-sm font-bold text-green-600">R$ ${(sale.totalValue || 0).toFixed(2).replace('.', ',')}</td>
         `;
-                elements.salesHistoryList.appendChild(row);
-            });
-        }
-
-        function applyDateFilter() {
-            const filterDateInput = document.getElementById('filter-date');
-            const selectedDate = filterDateInput ? filterDateInput.value : '';
-            if (selectedDate) {
-                const [year, month, day] = selectedDate.split('-');
-                currentDateFilter = `${day}/${month}/${year}`;
-                renderSalesHistory();
-            } else {
-                showToast('Selecione uma data para filtrar', 'warning');
-            }
-        }
-
-        function clearDateFilter() {
-            currentDateFilter = '';
-            const filterDateInput = document.getElementById('filter-date');
-            if (filterDateInput) filterDateInput.value = '';
-            renderSalesHistory();
-        }
-        async function saveSalesHistory() {
-            try {
-                // Salvar no backend
-                const response = await fetch(`${API_BASE_URL}/api/sales-history`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ salesHistory })
-                });
-
-                const data = await response.json();
-                if (data.success) {
-                    console.log('✅ Histórico de vendas salvo no backend');
-                }
-            } catch (error) {
-                console.error('❌ Erro ao salvar histórico no backend, usando localStorage:', error);
-                // Fallback para localStorage
-                localStorage.setItem('sales_history', JSON.stringify(salesHistory));
-            }
-        }
-
-        // CORREÇÃO COMPLETA: Função para registrar venda no histórico
-        // FUNÇÃO SIMPLIFICADA QUE SEMPRE FUNCIONA
-        async function addSaleToHistory(cartItems, total, deliveryType = '', customerName = '') {
-            try {
-                console.log('🚨 REGISTRANDO VENDA NO HISTÓRICO...');
-
-                const today = new Date();
-                const todayString = today.toLocaleDateString('pt-BR');
-
-                // Preparar dados básicos
-                const saleData = {
-                    date: todayString,
-                    dayOfWeek: today.getDay(),
-                    items: cartItems.map(item => ({
-                        productId: item.id,
-                        productName: item.title,
-                        saborName: item.saborName,
-                        quantity: item.quantity,
-                        price: item.price,
-                        subtotal: item.price * item.quantity
-                    })),
-                    totalQuantity: cartItems.reduce((sum, item) => sum + item.quantity, 0),
-                    totalValue: total,
-                    customerName: customerName,
-                    deliveryType: deliveryType,
-                    timestamp: new Date().toISOString()
-                };
-
-                console.log('📤 Enviando para API...');
-
-                // Tentar API primeiro
-                try {
-                    const response = await fetch(`${API_BASE_URL}/api/sales-history`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ saleData })
-                    });
-
-                    const result = await response.json();
-
-                    if (result.success) {
-                        console.log('✅ Venda registrada na API!');
-                    } else {
-                        console.log('⚠️ API retornou erro, usando localStorage...');
-                        throw new Error('API failed');
-                    }
-
-                } catch (apiError) {
-                    console.log('🔄 API falhou, salvando localmente...');
-
-                    // SALVAR NO LOCALSTORAGE (garantido)
-                    let localSales = JSON.parse(localStorage.getItem('sales_backup') || '[]');
-                    localSales.push(saleData);
-
-                    // Manter apenas últimos 50 pedidos
-                    if (localSales.length > 50) {
-                        localSales = localSales.slice(-50);
-                    }
-
-                    localStorage.setItem('sales_backup', JSON.stringify(localSales));
-                    console.log('✅ Venda salva no localStorage! Total:', localSales.length);
-                }
-
-                // SEMPRE retornar sucesso para não bloquear o pedido
-                return true;
-
-            } catch (error) {
-                console.error('❌ Erro no registro de venda:', error);
-
-                // Último recurso: salvar em cookie
-                try {
-                    const simpleSale = {
-                        date: new Date().toLocaleDateString('pt-BR'),
-                        time: new Date().toLocaleTimeString('pt-BR'),
-                        customer: customerName || 'Cliente',
-                        total: total,
-                        itemsCount: cartItems.length
-                    };
-
-                    document.cookie = `last_sale_${Date.now()}=${encodeURIComponent(JSON.stringify(simpleSale))}; max-age=604800; path=/`;
-                    console.log('✅ Venda salva em cookie de emergência');
-                } catch (e) {
-                    console.log('⚠️ Não conseguiu salvar nem em cookie');
-                }
-
-                return true; // SEMPRE retorna true para não bloquear o pedido
-            }
-        }
-
-        async function resetSalesHistory() {
-            if (confirm('Tem certeza que deseja zerar todas as vendas da semana? Esta ação não pode ser desfeita.')) {
-                salesHistory = [];
-
-                try {
-                    const response = await fetch(`${API_BASE_URL}/api/sales-history/reset`, {
-                        method: 'POST'
-                    });
-
-                    const data = await response.json();
-                    if (data.success) {
-                        console.log('✅ Histórico de vendas zerado no backend');
-                    }
-                } catch (error) {
-                    console.error('❌ Erro ao zerar histórico no backend:', error);
-                    // Fallback para localStorage
-                    await saveSalesHistory();
-                }
-
-                renderSalesHistory();
-                showToast('Vendas da semana zeradas com sucesso!', 'success');
-            }
-        }
-
-        function renderSalesHistory() {
-            console.log('📊 Renderizando histórico de vendas...', salesHistory);
-
-            // Verificar se o elemento salesHistoryList existe
-            if (!elements.salesHistoryList) {
-                console.error('❌ elements.salesHistoryList não encontrado');
-                return;
-            }
-
-            try {
-                let filteredSales = [...salesHistory];
-                if (currentDateFilter) {
-                    filteredSales = filteredSales.filter(sale => sale.date === currentDateFilter);
-                }
-
-                // Calcular total do período
-                const periodTotal = filteredSales.reduce((sum, sale) => sum + (sale.totalValue || 0), 0);
-
-                // Atualizar total do período - COM VERIFICAÇÃO DE EXISTÊNCIA
-                const periodTotalEl = document.getElementById('period-total');
-                if (periodTotalEl) {
-                    periodTotalEl.textContent = `R$ ${periodTotal.toFixed(2).replace('.', ',')}`;
-                }
-
-                // Mostrar/esconder card de total
-                const salesTotalCard = document.getElementById('sales-total-card');
-                if (salesTotalCard) {
-                    if (filteredSales.length > 0) {
-                        salesTotalCard.style.display = 'inline-block';
-                    } else {
-                        salesTotalCard.style.display = 'none';
-                    }
-                }
-
-                // Se não há vendas
-                if (filteredSales.length === 0) {
-                    elements.salesHistoryList.innerHTML = `<tr><td colspan="5" class="py-4 px-4 text-center text-gray-500">Nenhuma venda registrada.</div></td></tr>`;
-                    return;
-                }
-
-                // Renderizar lista de vendas
-                elements.salesHistoryList.innerHTML = '';
-
-                filteredSales.forEach(sale => {
-                    const row = document.createElement('tr');
-                    const dateTime = sale.created_at ? new Date(sale.created_at).toLocaleString('pt-BR') : sale.date;
-                    const itemsHtml = (sale.items || []).map(item =>
-                        `<span style="display: inline-block; background: #f3f4f6; padding: 0.125rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; margin-right: 0.5rem; margin-bottom: 0.25rem;">${item.productName} - ${item.saborName} (x${item.quantity})</span>`
-                    ).join('');
-
-                    row.innerHTML = `
-                <td class="py-3 px-4 text-sm">${dateTime}</td>
-                <td class="py-3 px-4 text-sm font-medium">${sale.customerName || 'Não informado'}</div></td>
-                <td class="py-3 px-4 text-sm">${sale.paymentMethod || 'Não informado'}</div></td>
-                <td class="py-3 px-4 text-sm"><div style="font-size: 0.875rem; color: #4b5563; margin-top: 0.25rem;">${itemsHtml || 'Sem itens'}</div></div></td>
-                <td class="py-3 px-4 text-sm font-bold text-green-600">R$ ${(sale.totalValue || 0).toFixed(2).replace('.', ',')}</div></td>
-            `;
-                    elements.salesHistoryList.appendChild(row);
-                });
-
-                console.log('✅ Histórico renderizado com sucesso!');
-
-            } catch (error) {
-                console.error('❌ ERRO CRÍTICO em renderSalesHistory:', error);
-                if (elements.salesHistoryList) {
-                    elements.salesHistoryList.innerHTML = `
-                <tr>
-                    <td colspan="5" class="py-4 px-4 text-center text-red-500">
-                        Erro ao carregar histórico. Verifique o console.
-                    </td>
-                </tr>
-            `;
-                }
-            }
-        }
+        elements.salesHistoryList.appendChild(row);
+    });
+}
 
         async function saveProducts() {
             if (!checkAuth()) {
@@ -4128,6 +3922,31 @@
             elements.enableDailyReports.addEventListener('change', updateWhatsappConfigFromUI);
             elements.whatsappToken.addEventListener('input', updateWhatsappConfigFromUI);
             elements.whatsappNumber.addEventListener('input', updateWhatsappConfigFromUI);
+                // ===== FILTROS DE DATA (HISTÓRICO DE VENDAS) =====
+    const applyDateFilterBtn = document.getElementById('apply-date-filter');
+    const clearDateFilterBtn = document.getElementById('clear-date-filter');
+    const filterDateInput = document.getElementById('filter-date');
+
+    if (applyDateFilterBtn) {
+        applyDateFilterBtn.addEventListener('click', () => {
+            const selectedDate = filterDateInput ? filterDateInput.value : '';
+            if (selectedDate) {
+                const [year, month, day] = selectedDate.split('-');
+                currentDateFilter = `${day}/${month}/${year}`;
+                renderSalesHistory();
+            } else {
+                showToast('Selecione uma data para filtrar', 'warning');
+            }
+        });
+    }
+
+    if (clearDateFilterBtn) {
+        clearDateFilterBtn.addEventListener('click', () => {
+            currentDateFilter = '';
+            if (filterDateInput) filterDateInput.value = '';
+            renderSalesHistory();
+        });
+    }
         }
 
         // ===== HANDLERS DE AUTENTICAÇÃO =====
@@ -5014,227 +4833,151 @@
         // CORREÇÃO PARA MOBILE: Função de checkout que funciona no celular e PWA
         // CORREÇÃO COMPLETA: Função de checkout que atualiza estoque ANTES de redirecionar
         // VERSÃO OTIMIZADA: Redirecionamento instantâneo para WhatsApp
-        async function handleCheckout(e) {
-            e.preventDefault();
+        // ===== FUNÇÃO DE CHECKOUT CORRIGIDA (ATUALIZA ESTOQUE LOCAL E BACKEND) =====
+async function handleCheckout(e) {
+    e.preventDefault();
 
-            console.log('⚡ CHECKOUT RÁPIDO - INICIANDO...');
+    console.log('⚡ CHECKOUT - INICIANDO...');
 
-            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-            const isPWA = window.matchMedia('(display-mode: standalone)').matches ||
-                window.navigator.standalone === true;
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const isPWA = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
 
-            const name = elements.customerName.value;
-            const deliveryType = document.querySelector('input[name="delivery-type"]:checked')?.value;
-            const paymentMethod = elements.paymentMethod.value;
+    const name = elements.customerName.value;
+    const deliveryType = document.querySelector('input[name="delivery-type"]:checked')?.value;
+    const paymentMethod = elements.paymentMethod.value;
 
-            if (!name || !deliveryType || !paymentMethod) {
-                showToast('Por favor, preencha todos os campos obrigatórios.', 'warning');
+    if (!name || !deliveryType || !paymentMethod) {
+        showToast('Por favor, preencha todos os campos obrigatórios.', 'warning');
+        return;
+    }
+
+    let addressData = {};
+    let total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+    if (deliveryType === 'entrega') {
+        const street = elements.street.value;
+        const number = elements.number.value;
+        const neighborhood = elements.neighborhood.value;
+        const complement = elements.complement.value;
+
+        if (!street || !number || !neighborhood) {
+            showToast('Por favor, preencha todos os campos de endereço obrigatórios.', 'warning');
+            return;
+        }
+
+        addressData = { street, number, neighborhood, complement };
+
+        if (!appliedCoupon) {
+            total += DELIVERY_FEE;
+        }
+    }
+
+    let trocoInfo = '';
+    if (paymentMethod === 'cash') {
+        const precisaTroco = document.querySelector('input[name="troco"]:checked')?.value;
+        if (precisaTroco === 'sim') {
+            const trocoValue = elements.trocoValue.value;
+            if (!trocoValue || parseFloat(trocoValue) <= total) {
+                showToast('Para precisar de troco, o valor informado deve ser maior que o total do pedido.', 'warning');
                 return;
             }
-
-            let addressData = {};
-            let total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-
-            if (deliveryType === 'entrega') {
-                const street = elements.street.value;
-                const number = elements.number.value;
-                const neighborhood = elements.neighborhood.value;
-                const complement = elements.complement.value;
-
-                if (!street || !number || !neighborhood) {
-                    showToast('Por favor, preencha todos os campos de endereço obrigatórios.', 'warning');
-                    return;
-                }
-
-                addressData = { street, number, neighborhood, complement };
-
-                if (!appliedCoupon) {
-                    total += DELIVERY_FEE;
-                }
-            }
-
-            let trocoInfo = '';
-            if (paymentMethod === 'cash') {
-                const precisaTroco = document.querySelector('input[name="troco"]:checked')?.value;
-                if (precisaTroco === 'sim') {
-                    const trocoValue = elements.trocoValue.value;
-                    if (!trocoValue || parseFloat(trocoValue) <= total) {
-                        showToast('Para precisar de troco, o valor informado deve ser maior que o total do pedido.', 'warning');
-                        return;
-                    }
-                    trocoInfo = `Troco para: R$ ${parseFloat(trocoValue).toFixed(2)}`;
-                }
-            }
-
-            // **OTIMIZAÇÃO: Salvar dados do pedido localmente primeiro**
-            const pedidoId = Date.now(); // ID único para o pedido
-            const pedidoData = {
-                id: pedidoId,
-                items: JSON.parse(JSON.stringify(cart)), // Cópia do carrinho
-                total: total,
-                customer: { name, deliveryType, address: addressData, paymentMethod, troco: trocoInfo },
-                timestamp: new Date().toISOString()
-            };
-
-            // Salvar pedido pendente no localStorage
-            localStorage.setItem(`pedido_pendente_${pedidoId}`, JSON.stringify(pedidoData));
-
-            // **OTIMIZAÇÃO: Criar mensagem do WhatsApp (SÍNCRONO - RÁPIDO)**
-            // **CORREÇÃO: Mensagem do WhatsApp sem emojis problemáticos e com taxa de entrega**
-            let message = `*NOVO PEDIDO - DONA BROOKIES*%0A%0A`;
-
-            message += `*ITENS DO PEDIDO:*%0A`;
-            cart.forEach((item, index) => {
-                const itemTotal = (item.price * item.quantity).toFixed(2);
-                message += `${index + 1}. ${item.title}%0A`;
-                message += `   Sabor: ${item.saborName}%0A`;
-                message += `   Quantidade: ${item.quantity} un.%0A`;
-                message += `   Valor: R$ ${itemTotal}%0A%0A`;
-            });
-
-            // ADICIONAR TAXA DE ENTREGA SE FOR ENTREGA
-            let finalTotal = total;
-            let deliveryFeeMessage = '';
-
-            if (deliveryType === 'entrega') {
-                if (!appliedCoupon) {
-                    finalTotal = total + DELIVERY_FEE;
-                    deliveryFeeMessage = `%0A*Taxa de entrega:* R$ ${DELIVERY_FEE.toFixed(2)}%0A`;
-                } else {
-                    deliveryFeeMessage = `%0A*Frete:* GRÁTIS (Cupom: ${appliedCoupon.code})%0A`;
-                }
-            }
-
-            message += deliveryFeeMessage;
-
-
-            message += `* TOTAL: R$ ${total.toFixed(2)}*%0A%0A`;
-            message += `* CLIENTE:* ${name}%0A`;
-
-            if (deliveryType === 'entrega') {
-                message += `* ENTREGA EM CASA*%0A`;
-                message += ` ${addressData.street}, ${addressData.number}%0A`;
-                message += ` ${addressData.neighborhood}%0A`;
-                if (addressData.complement) {
-                    message += ` ${addressData.complement}%0A`;
-                }
-                if (appliedCoupon) {
-                    message += ` ${appliedCoupon.code} - FRETE GRÁTIS%0A`;
-                }
-            } else {
-                message += `* RETIRADA NA LOJA*%0A`;
-                message += ` R. André Elias Pereira, nº 221%0A`;
-            }
-
-            message += `* PAGAMENTO:* ${getPaymentMethodName(paymentMethod)}%0A`;
-
-            if (paymentMethod === 'pix') {
-                message += `* PIX:* 125.707.164-56 (Myrella Luiza)%0A`;
-            }
-
-            if (trocoInfo) {
-                message += `${trocoInfo}%0A`;
-            }
-
-            message += ` ${new Date().toLocaleString('pt-BR')}%0A`;
-
-            // **OTIMIZAÇÃO: Limpar interface instantaneamente**
-            cart = [];
-            updateCartUI();
-            closeCheckoutModal();
-
-            // **OTIMIZAÇÃO: Redirecionar para WhatsApp IMEDIATAMENTE**
-            const whatsappNumber = "5584996933713";
-            const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${message}`;
-
-            console.log('⚡ Redirecionando IMEDIATAMENTE para WhatsApp...');
-
-            // Abrir WhatsApp de forma instantânea
-            if (isMobile || isPWA) {
-                // Para mobile: usar location.href é o mais rápido
-                window.location.href = whatsappUrl;
-            } else {
-                // Para desktop
-                window.open(whatsappUrl, '_blank');
-            }
-
-            // **OTIMIZAÇÃO: Processar estoque e histórico EM SEGUNDO PLANO (async)**
-            setTimeout(async () => {
-                try {
-                    console.log('⚙️ Processando estoque e histórico em segundo plano...');
-
-                    // 1. Registrar venda no histórico
-                    // Calcular APENAS o valor dos produtos (sem frete)
-                    const productsOnlyTotal = pedidoData.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-
-                    // Chamar a função com os parâmetros corretos
-                    await addSaleToHistory(
-                        pedidoData.items,      // items do carrinho
-                        productsOnlyTotal,     // APENAS o valor dos produtos (sem frete)
-                        deliveryType,          // tipo de entrega
-                        name,                  // nome do cliente
-                        paymentMethod          // forma de pagamento
-                    );
-
-                    // Salvar localmente primeiro (rápido)
-                    let localSales = JSON.parse(localStorage.getItem('sales_backup') || '[]');
-                    localSales.push(saleData);
-                    localStorage.setItem('sales_backup', JSON.stringify(localSales));
-
-                    // Tentar salvar no backend (pode falhar, não é crítico)
-                    try {
-                        await fetch(`${API_BASE_URL}/api/sales-history`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ saleData })
-                        });
-                    } catch (apiError) {
-                        console.log('⚠️ API falhou, mas temos backup local');
-                    }
-
-                    // 2. Atualizar estoque
-                    try {
-                        const stockResponse = await fetch(`${API_BASE_URL}/api/orders/update-stock`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ items: pedidoData.items })
-                        });
-
-                        if (stockResponse.ok) {
-                            console.log('✅ Estoque atualizado em segundo plano');
-
-                            // Atualizar interface quando o usuário voltar
-                            setTimeout(async () => {
-                                await loadData();
-                                filterProducts();
-                            }, 2000);
-                        }
-                    } catch (stockError) {
-                        console.error('❌ Erro no estoque em segundo plano:', stockError);
-                    }
-
-                    // 3. Remover pedido pendente
-                    localStorage.removeItem(`pedido_pendente_${pedidoId}`);
-
-                } catch (error) {
-                    console.error('❌ Erro em segundo plano:', error);
-                }
-            }, 100); // Pequeno delay para não bloquear o redirecionamento
-
-            // **OTIMIZAÇÃO: Se o redirecionamento falhar, mostrar fallback**
-            setTimeout(() => {
-                // Verificar se ainda estamos na mesma página (redirecionamento falhou)
-                if (!document.hidden) {
-                    console.log('⚠️ Redirecionamento pode ter falhado, mostrando fallback...');
-
-                    const fallbackMessage = `Pedido processado! Abra o WhatsApp e envie para (84) 99693-3713: ${message.substring(0, 200)}...`;
-                    showToast(fallbackMessage, 'info', 5000);
-
-                    // Tentar abrir novamente
-                    window.open(whatsappUrl, '_blank');
-                }
-            }, 3000);
+            trocoInfo = `Troco para: R$ ${parseFloat(trocoValue).toFixed(2)}`;
         }
+    }
+
+    // ---- 1. CRIAR BACKUP DO CARRINHO ANTES DE ALTERAR ----
+    const cartBackup = JSON.parse(JSON.stringify(cart));
+
+    // ---- 2. ATUALIZAR ESTOQUE LOCAL IMEDIATAMENTE ----
+    for (const item of cart) {
+        const product = products.find(p => p.id === item.id);
+        if (product && product.sabores[item.saborIndex]) {
+            const sabor = product.sabores[item.saborIndex];
+            sabor.quantity = Math.max(0, sabor.quantity - item.quantity);
+        }
+    }
+    
+    // Salvar produtos atualizados no backend (em segundo plano)
+    saveProducts().catch(err => console.warn('Erro ao salvar estoque no backend:', err));
+    
+    // Atualizar interface (loja e admin)
+    filterProducts();
+    renderAdminProducts();
+    updateAdminDashboard();
+
+    // ---- 3. REGISTRAR VENDA NO HISTÓRICO ----
+    const productsOnlyTotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    await addSaleToHistory(cart, productsOnlyTotal, deliveryType, name, paymentMethod);
+
+    // ---- 4. PREPARAR MENSAGEM DO WHATSAPP ----
+    let message = `*NOVO PEDIDO - DONA BROOKIES*%0A%0A`;
+    message += `*ITENS DO PEDIDO:*%0A`;
+    cart.forEach((item, index) => {
+        const itemTotal = (item.price * item.quantity).toFixed(2);
+        message += `${index + 1}. ${item.title}%0A`;
+        message += `   Sabor: ${item.saborName}%0A`;
+        message += `   Quantidade: ${item.quantity} un.%0A`;
+        message += `   Valor: R$ ${itemTotal}%0A%0A`;
+    });
+
+    let deliveryFeeMessage = '';
+    if (deliveryType === 'entrega') {
+        if (!appliedCoupon) {
+            deliveryFeeMessage = `%0A*Taxa de entrega:* R$ ${DELIVERY_FEE.toFixed(2)}%0A`;
+        } else {
+            deliveryFeeMessage = `%0A*Frete:* GRÁTIS (Cupom: ${appliedCoupon.code})%0A`;
+        }
+    }
+    message += deliveryFeeMessage;
+    message += `* TOTAL: R$ ${total.toFixed(2)}*%0A%0A`;
+    message += `* CLIENTE:* ${name}%0A`;
+
+    if (deliveryType === 'entrega') {
+        message += `* ENTREGA EM CASA*%0A`;
+        message += ` ${addressData.street}, ${addressData.number}%0A`;
+        message += ` ${addressData.neighborhood}%0A`;
+        if (addressData.complement) message += ` ${addressData.complement}%0A`;
+        if (appliedCoupon) message += ` ${appliedCoupon.code} - FRETE GRÁTIS%0A`;
+    } else {
+        message += `* RETIRADA NA LOJA*%0A`;
+        message += ` R. André Elias Pereira, nº 221%0A`;
+    }
+
+    message += `* PAGAMENTO:* ${getPaymentMethodName(paymentMethod)}%0A`;
+    if (paymentMethod === 'pix') message += `* PIX:* 125.707.164-56 (Myrella Luiza)%0A`;
+    if (trocoInfo) message += `${trocoInfo}%0A`;
+    message += ` ${new Date().toLocaleString('pt-BR')}%0A`;
+
+    // ---- 5. LIMPAR CARRINHO E FECHAR MODAL ----
+    cart = [];
+    updateCartUI();
+    closeCheckoutModal();
+
+    // ---- 6. REDIRECIONAR PARA WHATSAPP ----
+    const whatsappNumber = "5584996933713";
+    const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${message}`;
+
+    if (isMobile || isPWA) {
+        window.location.href = whatsappUrl;
+    } else {
+        window.open(whatsappUrl, '_blank');
+    }
+
+    // ---- 7. TENTAR ATUALIZAR ESTOQUE NO BACKEND (USANDO O BACKUP) ----
+    setTimeout(async () => {
+        try {
+            const stockResponse = await fetch(`${API_BASE_URL}/api/orders/update-stock`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ items: cartBackup })
+            });
+            if (stockResponse.ok) console.log('✅ Estoque atualizado no backend');
+        } catch (err) {
+            console.warn('⚠️ Erro ao atualizar estoque no backend (mas estoque local já foi atualizado)', err);
+            localStorage.setItem('pending_stock_update', JSON.stringify({ items: cartBackup, timestamp: Date.now() }));
+        }
+    }, 500);
+}
 
         // Função auxiliar para detectar se é iOS
         function isIOS() {
