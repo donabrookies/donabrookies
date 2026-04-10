@@ -3700,24 +3700,27 @@
 
         // ===== INICIALIZAÇÃO =====
         async function init() {
-            if (!isStandaloneApp()) {
-                hideWelcomeScreen();
-            }
+    if (!isStandaloneApp()) {
+        hideWelcomeScreen();
+    }
 
-            await loadData();
-            setupRouting();
-            setupEventListeners();
+    await loadData();
+    setupRouting();
+    setupEventListeners();
 
-            renderCategoryFilters();
-            updateCartUI();
-            renderCategories();
-            updateCategorySelects();
+    renderCategoryFilters();
+    updateCartUI();
+    renderCategories();
+    updateCategorySelects();
 
-            showStoreView();
-            // Sincronizar vendas pendentes ao iniciar
-            syncPendingSales();
-        }
-
+    showStoreView();
+    
+    // Sincronizar vendas pendentes ao iniciar
+    syncPendingSales();
+    
+    // Sincronizar atualizações de estoque pendentes
+    syncPendingStockUpdates();
+}
         // ===== CONFIGURAÇÃO DE EVENT LISTENERS =====
         function setupEventListeners() {
             elements.loginBtn.addEventListener('click', handleLogin);
@@ -4599,6 +4602,71 @@
             elements.checkoutModal.classList.add('hidden');
             document.body.style.overflow = 'auto';
         }
+        async function saveOrderLocally(cartBackup, productsOnlyTotal, deliveryType, name, paymentMethod, addressData, trocoInfo, appliedCoupon) {
+            console.log('💾 Salvando pedido LOCALMENTE como backup...');
+
+            // Salvar venda pendente no localStorage
+            const pendingSales = JSON.parse(localStorage.getItem('pending_sales') || '[]');
+            pendingSales.push({
+                cartBackup: cartBackup,
+                customerName: name,
+                deliveryType: deliveryType,
+                paymentMethod: paymentMethod,
+                totalValue: productsOnlyTotal,
+                address: addressData,
+                timestamp: Date.now()
+            });
+            localStorage.setItem('pending_sales', JSON.stringify(pendingSales));
+
+            // Salvar no histórico local
+            await addSaleToHistory(cartBackup, productsOnlyTotal, deliveryType, name, paymentMethod);
+
+            // Atualizar interfaces
+            filterProducts();
+            renderAdminProducts();
+            updateAdminDashboard();
+
+            showToast('Pedido salvo localmente. Será sincronizado em breve.', 'warning');
+        }
+        async function syncPendingStockUpdates() {
+            const pendingSales = JSON.parse(localStorage.getItem('pending_sales') || '[]');
+
+            if (pendingSales.length === 0) return;
+
+            console.log(`🔄 Sincronizando ${pendingSales.length} pedidos pendentes com o backend...`);
+
+            for (let i = 0; i < pendingSales.length; i++) {
+                const sale = pendingSales[i];
+
+                try {
+                    // Preparar atualizações de estoque
+                    const stockUpdates = [];
+                    for (const item of sale.cartBackup) {
+                        stockUpdates.push({
+                            productId: item.id,
+                            saborIndex: item.saborIndex,
+                            quantity: item.quantity
+                        });
+                    }
+
+                    const response = await fetch(`${API_BASE_URL}/api/orders/update-stock`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ items: stockUpdates })
+                    });
+
+                    if (response.ok) {
+                        console.log(`✅ Pedido pendente ${i + 1} sincronizado!`);
+                        pendingSales.splice(i, 1);
+                        i--;
+                    }
+                } catch (error) {
+                    console.error(`❌ Erro ao sincronizar pedido pendente:`, error);
+                }
+            }
+
+            localStorage.setItem('pending_sales', JSON.stringify(pendingSales));
+        }
 
         async function handleCheckout(e) {
     e.preventDefault();
@@ -4704,110 +4772,118 @@
     
     // FECHAR MODAL E LIMPAR CARRINHO IMEDIATAMENTE
     closeCheckoutModal();
-    cart = [];
-    updateCartUI();
     
     // MOSTRAR TOAST DE SUCESSO
     showToast('Pedido enviado! Redirecionando para WhatsApp...', 'success');
     
-    // SEGUNDO: SALVAR DADOS EM BACKGROUND (sem travar a UI)
+    // SEGUNDO: ATUALIZAR ESTOQUE LOCALMENTE E SALVAR EM BACKGROUND
     setTimeout(async () => {
         try {
             console.log('📤 Salvando pedido em background...');
             
-            // Preparar dados de estoque
-            const stockUpdates = [];
+            // PRIMEIRO: ATUALIZAR ESTOQUE LOCALMENTE
             for (const item of cartBackup) {
                 const product = products.find(p => p.id === item.id);
-                if (product && product.sabores[item.saborIndex]) {
-                    const newQuantity = product.sabores[item.saborIndex].quantity - item.quantity;
-                    stockUpdates.push({
-                        id: item.id,
-                        saborIndex: item.saborIndex,
-                        quantity: item.quantity,
-                        newQuantity: newQuantity
-                    });
-                    
-                    // Atualizar localmente também
-                    product.sabores[item.saborIndex].quantity = Math.max(0, newQuantity);
+                if (product && product.sabores && product.sabores[item.saborIndex]) {
+                    const currentStock = product.sabores[item.saborIndex].quantity || 0;
+                    product.sabores[item.saborIndex].quantity = Math.max(0, currentStock - item.quantity);
+                    console.log(`📦 ${product.title} - ${product.sabores[item.saborIndex].name}: ${currentStock} -> ${product.sabores[item.saborIndex].quantity}`);
                 }
             }
             
-            // Preparar dados da venda
-            const saleData = {
-                items: cartBackup.map(item => ({
-                    productId: item.id,
-                    productName: item.title,
-                    saborName: item.saborName,
-                    quantity: item.quantity,
-                    price: item.price,
-                    subtotal: item.price * item.quantity
-                })),
-                totalQuantity: cartBackup.reduce((sum, item) => sum + item.quantity, 0),
-                totalValue: productsOnlyTotal,
-                customerName: name,
-                deliveryType: deliveryType,
-                paymentMethod: paymentMethod,
-                address: addressData,
-                deliveryFee: (deliveryType === 'entrega' && !appliedCoupon) ? DELIVERY_FEE : 0,
-                couponApplied: appliedCoupon ? appliedCoupon.code : null,
-                date: new Date().toISOString()
-            };
-            
-            // Enviar para API em background
-            const response = await fetch(`${API_BASE_URL}/api/checkout`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    cart: cartBackup,
-                    stockUpdates: stockUpdates,
-                    saleData: saleData
-                })
-            });
-            
-            if (response.ok) {
-                console.log('✅ Pedido salvo no backend com sucesso!');
-                // Salvar no histórico local também
-                await addSaleToHistory(cartBackup, productsOnlyTotal, deliveryType, name, paymentMethod);
-                filterProducts();
-                renderAdminProducts();
-                updateAdminDashboard();
-            } else {
-                console.log('⚠️ Falha ao salvar no backend, salvando localmente...');
-                // Salvar localmente como backup
-                const pendingSales = JSON.parse(localStorage.getItem('pending_sales') || '[]');
-                pendingSales.push({
-                    ...saleData,
-                    cartBackup: cartBackup,
-                    timestamp: Date.now()
-                });
-                localStorage.setItem('pending_sales', JSON.stringify(pendingSales));
-                await addSaleToHistory(cartBackup, productsOnlyTotal, deliveryType, name, paymentMethod);
-                filterProducts();
-                renderAdminProducts();
-                updateAdminDashboard();
-            }
-        } catch (error) {
-            console.error('❌ Erro em background:', error);
-            // Salvar localmente como fallback
-            const pendingSales = JSON.parse(localStorage.getItem('pending_sales') || '[]');
-            pendingSales.push({
-                cartBackup: cartBackup,
-                customerName: name,
-                deliveryType: deliveryType,
-                paymentMethod: paymentMethod,
-                totalValue: productsOnlyTotal,
-                timestamp: Date.now()
-            });
-            localStorage.setItem('pending_sales', JSON.stringify(pendingSales));
-            await addSaleToHistory(cartBackup, productsOnlyTotal, deliveryType, name, paymentMethod);
+            // ATUALIZAR INTERFACES LOCALMENTE
             filterProducts();
             renderAdminProducts();
             updateAdminDashboard();
+            
+            // SALVAR NO HISTÓRICO LOCAL
+            await addSaleToHistory(cartBackup, productsOnlyTotal, deliveryType, name, paymentMethod);
+            
+            // TENTAR SALVAR NO BACKEND
+            try {
+                console.log('🔄 Sincronizando com backend...');
+                
+                // Preparar produtos atualizados para enviar ao backend
+                const productsToSync = products.map(p => ({
+                    id: p.id,
+                    title: p.title,
+                    category: p.category,
+                    price: p.price,
+                    description: p.description,
+                    status: p.status,
+                    sabores: p.sabores,
+                    display_order: p.display_order || 0
+                }));
+                
+                // Salvar produtos no backend
+                const saveResponse = await fetch(`${API_BASE_URL}/api/products`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({ products: productsToSync })
+                });
+                
+                if (saveResponse.ok) {
+                    console.log('✅ Estoque sincronizado com o backend!');
+                } else {
+                    console.log('⚠️ Erro ao sincronizar estoque, salvando localmente');
+                    // Salvar no localStorage para sincronizar depois
+                    const pendingStock = JSON.parse(localStorage.getItem('pending_stock_updates') || '[]');
+                    pendingStock.push({
+                        cartBackup: cartBackup,
+                        timestamp: Date.now()
+                    });
+                    localStorage.setItem('pending_stock_updates', JSON.stringify(pendingStock));
+                }
+                
+                // Salvar venda no backend
+                const saleDataForBackend = {
+                    items: cartBackup.map(item => ({
+                        productId: item.id,
+                        productName: item.title,
+                        saborName: item.saborName,
+                        quantity: item.quantity,
+                        price: item.price,
+                        subtotal: item.price * item.quantity
+                    })),
+                    totalQuantity: cartBackup.reduce((sum, item) => sum + item.quantity, 0),
+                    totalValue: productsOnlyTotal,
+                    customerName: name,
+                    deliveryType: deliveryType,
+                    paymentMethod: paymentMethod,
+                    date: new Date().toISOString()
+                };
+                
+                await fetch(`${API_BASE_URL}/api/sales-history`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ saleData: saleDataForBackend })
+                });
+                
+                console.log('✅ Venda registrada no backend!');
+                
+            } catch (apiError) {
+                console.error('❌ Erro ao sincronizar com backend:', apiError);
+                // Salvar atualização pendente
+                const pendingStock = JSON.parse(localStorage.getItem('pending_stock_updates') || '[]');
+                pendingStock.push({
+                    cartBackup: cartBackup,
+                    timestamp: Date.now()
+                });
+                localStorage.setItem('pending_stock_updates', JSON.stringify(pendingStock));
+            }
+            
+            // Limpar carrinho
+            cart = [];
+            updateCartUI();
+            
+        } catch (error) {
+            console.error('❌ Erro em background:', error);
         }
-    }, 100); // Pequeno delay para não competir com o redirecionamento
+    }, 100);
 }
-
         function getPaymentMethodName(method) {
             switch (method) {
                 case 'pix': return 'PIX';
@@ -5801,6 +5877,66 @@
                 console.log('✅ Todas as vendas pendentes foram sincronizadas!');
             }
         }
+
+        async function syncPendingStockUpdates() {
+    const pendingStock = JSON.parse(localStorage.getItem('pending_stock_updates') || '[]');
+    
+    if (pendingStock.length === 0) return;
+    
+    console.log(`🔄 Sincronizando ${pendingStock.length} atualizações de estoque pendentes...`);
+    
+    for (let i = 0; i < pendingStock.length; i++) {
+        const update = pendingStock[i];
+        
+        try {
+            // Aplicar atualização localmente primeiro
+            for (const item of update.cartBackup) {
+                const product = products.find(p => p.id === item.id);
+                if (product && product.sabores && product.sabores[item.saborIndex]) {
+                    const currentStock = product.sabores[item.saborIndex].quantity || 0;
+                    product.sabores[item.saborIndex].quantity = Math.max(0, currentStock - item.quantity);
+                }
+            }
+            
+            // Preparar produtos para sincronizar
+            const productsToSync = products.map(p => ({
+                id: p.id,
+                title: p.title,
+                category: p.category,
+                price: p.price,
+                description: p.description,
+                status: p.status,
+                sabores: p.sabores,
+                display_order: p.display_order || 0
+            }));
+            
+            // Salvar no backend
+            const response = await fetch(`${API_BASE_URL}/api/products`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${authToken}`
+                },
+                body: JSON.stringify({ products: productsToSync })
+            });
+            
+            if (response.ok) {
+                console.log(`✅ Atualização de estoque pendente ${i + 1} sincronizada!`);
+                pendingStock.splice(i, 1);
+                i--;
+            }
+        } catch (error) {
+            console.error(`❌ Erro ao sincronizar atualização pendente:`, error);
+        }
+    }
+    
+    localStorage.setItem('pending_stock_updates', JSON.stringify(pendingStock));
+    
+    // Atualizar interfaces
+    filterProducts();
+    renderAdminProducts();
+    updateAdminDashboard();
+}
 
         init();
     </script>
