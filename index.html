@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#a5784f">
+    <meta name="theme-color" content="#ffffff">
     <meta name="description" content="Dona Brookies - Brownies e cookies feitos com amor e crocância!">
     <title>DonaBrookies</title>
 
@@ -36,6 +36,7 @@
         body {
             font-family: 'Inter', sans-serif;
             background-color: var(--urbanz-cream);
+            overscroll-behavior: none;
         }
 
         /* Tela de Boas-Vindas - APENAS PARA APP */
@@ -1065,18 +1066,7 @@
                 touch-action: manipulation;
             }
         }
-        /* CORREÇÃO URGENTE: Fundo branco no mobile */
-html, body {
-    background-color: #ffffff !important;
-    margin: 0 !important;
-    padding: 0 !important;
-}
-
-@media (max-width: 768px) {
-    html, body, #store-section, .cart-section {
-        background-color: #ffffff !important;
-    }
-}
+        
 
         @media (max-width: 640px) {
             .dashboard-cards {
