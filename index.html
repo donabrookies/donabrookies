@@ -3422,47 +3422,66 @@
 
             let filteredSales = [...salesHistory];
 
-            // Aplicar filtro de data se existir
             if (currentDateFilter) {
                 filteredSales = filteredSales.filter(sale => {
-                    // Normalizar a data da venda (remover hora se houver)
                     const saleDate = sale.date ? sale.date.split(' ')[0] : '';
-                    console.log(`Comparando: ${saleDate} === ${currentDateFilter} -> ${saleDate === currentDateFilter}`);
                     return saleDate === currentDateFilter;
                 });
             }
 
-            // Calcular total do período
             const periodTotal = filteredSales.reduce((sum, sale) => sum + (sale.totalValue || 0), 0);
             const periodTotalEl = document.getElementById('period-total');
             if (periodTotalEl) {
                 periodTotalEl.textContent = `R$ ${periodTotal.toFixed(2).replace('.', ',')}`;
             }
 
-            const salesTotalCard = document.getElementById('sales-total-card');
-            if (salesTotalCard) {
-                salesTotalCard.style.display = 'inline-block';
-            }
-
             if (filteredSales.length === 0) {
-                let mensagem = 'Nenhuma venda registrada no período.';
-                if (currentDateFilter) {
-                    mensagem = `Nenhuma venda encontrada para o dia ${currentDateFilter}. Total: R$ 0,00`;
-                } else {
-                    mensagem = 'Nenhuma venda registrada ainda. Total: R$ 0,00';
-                }
+                let mensagem = currentDateFilter ?
+                    `Nenhuma venda encontrada para o dia ${currentDateFilter}.` :
+                    'Nenhuma venda registrada ainda.';
 
                 elements.salesHistoryList.innerHTML = `
-                <tr>
-                    <td colspan="5" class="py-4 px-4 text-center text-gray-500">
-                        ${mensagem}
-                    </td>
-                </tr>
-            `;
+            <tr>
+                <td colspan="5" class="py-4 px-4 text-center text-gray-500">
+                    ${mensagem} Total: R$ 0,00
+                </td>
+            </tr>
+        `;
                 return;
             }
 
+            // LIMPA O CONTEÚDO UMA ÚNICA VEZ
             elements.salesHistoryList.innerHTML = '';
+
+            filteredSales.forEach(sale => {
+                const row = document.createElement('tr');
+                const dateTime = sale.created_at ? new Date(sale.created_at).toLocaleString('pt-BR') : sale.date;
+
+                // PEGAR NOME DO CLIENTE
+                const customerName = sale.customerName || sale.customer_name || 'Cliente não informado';
+
+                // PEGAR FORMA DE PAGAMENTO - TRADUZIDA
+                let paymentMethod = sale.paymentMethod || sale.payment_method || 'Não informado';
+                if (paymentMethod === 'pix') paymentMethod = 'PIX';
+                if (paymentMethod === 'card') paymentMethod = 'Cartão';
+                if (paymentMethod === 'cash') paymentMethod = 'Dinheiro';
+
+                const itemsHtml = (sale.items || []).map(item =>
+                    `<span style="display: inline-block; background: #f3f4f6; padding: 0.125rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; margin-right: 0.5rem; margin-bottom: 0.25rem;">
+                ${item.productName} - ${item.saborName} (x${item.quantity})
+            </span>`
+                ).join('');
+
+                row.innerHTML = `
+            <td class="py-3 px-4 text-sm">${dateTime}</td>
+            <td class="py-3 px-4 text-sm font-medium">${customerName}</td>
+            <td class="py-3 px-4 text-sm">${paymentMethod}</td>
+            <td class="py-3 px-4 text-sm"><div style="font-size: 0.875rem; color: #4b5563;">${itemsHtml || 'Sem itens'}</div></td>
+            <td class="py-3 px-4 text-sm font-bold text-green-600">R$ ${(sale.totalValue || 0).toFixed(2).replace('.', ',')}</td>
+        `;
+                elements.salesHistoryList.appendChild(row);
+            });
+
 
             filteredSales.forEach(sale => {
                 const row = document.createElement('tr');
@@ -3493,6 +3512,7 @@
                     created_at: today.toISOString(),
                     dayOfWeek: today.getDay(),
                     items: cartItems.map(item => ({
+                        productId: item.id,
                         productName: item.title,
                         saborName: item.saborName,
                         quantity: item.quantity,
@@ -3502,38 +3522,25 @@
                     totalQuantity: cartItems.reduce((sum, item) => sum + item.quantity, 0),
                     totalValue: productsTotal,
                     customerName: customerName,
+                    customer_name: customerName,
                     deliveryType: deliveryType,
-                    paymentMethod: paymentMethod
+                    paymentMethod: paymentMethod,
+                    payment_method: paymentMethod
                 };
 
-                let localSales = JSON.parse(localStorage.getItem('sales_backup') || '[]');
-                localSales.unshift(saleData);
-                if (localSales.length > 100) localSales = localSales.slice(0, 100);
-                localStorage.setItem('sales_backup', JSON.stringify(localSales));
-
+                // Salvar no histórico local
                 salesHistory = [saleData, ...salesHistory];
-                renderSalesHistory();
 
-                try {
-                    const response = await fetch(`${API_BASE_URL}/api/sales-history`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ saleData })
-                    });
-                    const data = await response.json();
-                    if (data.success) {
-                        console.log('✅ Venda registrada no backend');
-                    } else {
-                        console.warn('⚠️ Backend recusou venda, mas salvamos localmente');
-                    }
-                } catch (apiError) {
-                    console.warn('⚠️ API offline, venda salva apenas localmente', apiError);
-                }
+                // Salvar no localStorage como backup
+                localStorage.setItem('sales_backup', JSON.stringify(salesHistory));
+
+                // Renderizar
+                renderSalesHistory();
 
                 return true;
             } catch (error) {
-                console.error('❌ Erro crítico em addSaleToHistory:', error);
-                return true;
+                console.error('❌ Erro em addSaleToHistory:', error);
+                return false;
             }
         }
 
@@ -3707,6 +3714,8 @@
             updateCategorySelects();
 
             showStoreView();
+            // Sincronizar vendas pendentes ao iniciar
+            syncPendingSales();
         }
 
         // ===== CONFIGURAÇÃO DE EVENT LISTENERS =====
@@ -4592,83 +4601,154 @@
         }
 
         async function handleCheckout(e) {
-            e.preventDefault();
+    e.preventDefault();
 
-            console.log('⚡ CHECKOUT - INICIANDO...');
+    console.log('⚡ CHECKOUT - INICIANDO...');
 
-            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-            const isPWA = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const isPWA = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
 
-            const name = elements.customerName.value;
-            const deliveryType = document.querySelector('input[name="delivery-type"]:checked')?.value;
-            const paymentMethod = elements.paymentMethod.value;
+    const name = elements.customerName.value;
+    const deliveryType = document.querySelector('input[name="delivery-type"]:checked')?.value;
+    const paymentMethod = elements.paymentMethod.value;
 
-            if (!name || !deliveryType || !paymentMethod) {
-                showToast('Por favor, preencha todos os campos obrigatórios.', 'warning');
+    if (!name || !deliveryType || !paymentMethod) {
+        showToast('Por favor, preencha todos os campos obrigatórios.', 'warning');
+        return;
+    }
+
+    let addressData = {};
+    let total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+    if (deliveryType === 'entrega') {
+        const street = elements.street.value;
+        const number = elements.number.value;
+        const neighborhood = elements.neighborhood.value;
+        const complement = elements.complement.value;
+
+        if (!street || !number || !neighborhood) {
+            showToast('Por favor, preencha todos os campos de endereço obrigatórios.', 'warning');
+            return;
+        }
+
+        addressData = { street, number, neighborhood, complement };
+
+        if (!appliedCoupon) total += DELIVERY_FEE;
+    }
+
+    let trocoInfo = '';
+    if (paymentMethod === 'cash') {
+        const precisaTroco = document.querySelector('input[name="troco"]:checked')?.value;
+        if (precisaTroco === 'sim') {
+            const trocoValue = elements.trocoValue.value;
+            if (!trocoValue || parseFloat(trocoValue) <= total) {
+                showToast('Para precisar de troco, o valor informado deve ser maior que o total do pedido.', 'warning');
                 return;
             }
+            trocoInfo = `Troco para: R$ ${parseFloat(trocoValue).toFixed(2)}`;
+        }
+    }
 
-            let addressData = {};
-            let total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    // FAZER BACKUP DO CARRINHO ANTES DE QUALQUER OPERAÇÃO
+    const cartBackup = JSON.parse(JSON.stringify(cart));
+    const productsOnlyTotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
-            if (deliveryType === 'entrega') {
-                const street = elements.street.value;
-                const number = elements.number.value;
-                const neighborhood = elements.neighborhood.value;
-                const complement = elements.complement.value;
-
-                if (!street || !number || !neighborhood) {
-                    showToast('Por favor, preencha todos os campos de endereço obrigatórios.', 'warning');
-                    return;
-                }
-
-                addressData = { street, number, neighborhood, complement };
-
-                if (!appliedCoupon) total += DELIVERY_FEE;
-            }
-
-            let trocoInfo = '';
-            if (paymentMethod === 'cash') {
-                const precisaTroco = document.querySelector('input[name="troco"]:checked')?.value;
-                if (precisaTroco === 'sim') {
-                    const trocoValue = elements.trocoValue.value;
-                    if (!trocoValue || parseFloat(trocoValue) <= total) {
-                        showToast('Para precisar de troco, o valor informado deve ser maior que o total do pedido.', 'warning');
-                        return;
-                    }
-                    trocoInfo = `Troco para: R$ ${parseFloat(trocoValue).toFixed(2)}`;
-                }
-            }
-
-            const cartBackup = JSON.parse(JSON.stringify(cart));
-
+    // === PRIMEIRO: SALVAR NO BANCO DE DADOS ===
+    console.log('📤 Atualizando estoque no backend...');
+    
+    // Preparar dados de estoque para enviar
+    const stockUpdates = [];
+    for (const item of cart) {
+        const product = products.find(p => p.id === item.id);
+        if (product && product.sabores[item.saborIndex]) {
+            const newQuantity = product.sabores[item.saborIndex].quantity - item.quantity;
+            stockUpdates.push({
+                id: item.id,
+                saborIndex: item.saborIndex,
+                quantity: item.quantity,
+                newQuantity: newQuantity
+            });
+        }
+    }
+    
+    // Preparar dados da venda
+    const saleData = {
+        items: cart.map(item => ({
+            productId: item.id,
+            productName: item.title,
+            saborName: item.saborName,
+            quantity: item.quantity,
+            price: item.price,
+            subtotal: item.price * item.quantity
+        })),
+        totalQuantity: cart.reduce((sum, item) => sum + item.quantity, 0),
+        totalValue: productsOnlyTotal,
+        customerName: name,
+        deliveryType: deliveryType,
+        paymentMethod: paymentMethod,
+        address: addressData,
+        deliveryFee: (deliveryType === 'entrega' && !appliedCoupon) ? DELIVERY_FEE : 0,
+        couponApplied: appliedCoupon ? appliedCoupon.code : null,
+        date: new Date().toISOString()
+    };
+    
+    try {
+        // Enviar requisição para atualizar estoque E salvar venda
+        console.log('📤 Enviando para API...');
+        
+        const response = await fetch(`${API_BASE_URL}/api/checkout`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                cart: cart,
+                stockUpdates: stockUpdates,
+                saleData: saleData
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            console.log('✅ Venda e estoque salvos no backend com sucesso!');
+            
+            // Agora que o backend salvou, atualizar localmente
             for (const item of cart) {
                 const product = products.find(p => p.id === item.id);
                 if (product && product.sabores[item.saborIndex]) {
-                    const sabor = product.sabores[item.saborIndex];
-                    sabor.quantity = Math.max(0, sabor.quantity - item.quantity);
+                    product.sabores[item.saborIndex].quantity = Math.max(0, product.sabores[item.saborIndex].quantity - item.quantity);
                 }
             }
-
-            saveProducts().catch(err => console.warn('Erro ao salvar estoque no backend:', err));
-
+            
+            // Salvar no histórico local
+            await addSaleToHistory(cart, productsOnlyTotal, deliveryType, name, paymentMethod);
+            
+            // Atualizar interfaces
             filterProducts();
             renderAdminProducts();
             updateAdminDashboard();
-
-            const productsOnlyTotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-            await addSaleToHistory(cart, productsOnlyTotal, deliveryType, name, paymentMethod);
-
+            
+            // Limpar carrinho
+            cart = [];
+            updateCartUI();
+            closeCheckoutModal();
+            
+            // Construir mensagem do WhatsApp usando o cartBackup
             let message = `*NOVO PEDIDO - DONA BROOKIES*%0A%0A`;
             message += `*ITENS DO PEDIDO:*%0A`;
-            cart.forEach((item, index) => {
+            cartBackup.forEach((item, index) => {
                 const itemTotal = (item.price * item.quantity).toFixed(2);
                 message += `${index + 1}. ${item.title}%0A`;
                 message += `   Sabor: ${item.saborName}%0A`;
                 message += `   Quantidade: ${item.quantity} un.%0A`;
                 message += `   Valor: R$ ${itemTotal}%0A%0A`;
             });
-
+            
             let deliveryFeeMessage = '';
             if (deliveryType === 'entrega') {
                 if (!appliedCoupon) {
@@ -4680,7 +4760,7 @@
             message += deliveryFeeMessage;
             message += `* TOTAL: R$ ${total.toFixed(2)}*%0A%0A`;
             message += `* CLIENTE:* ${name}%0A`;
-
+            
             if (deliveryType === 'entrega') {
                 message += `* ENTREGA EM CASA*%0A`;
                 message += ` ${addressData.street}, ${addressData.number}%0A`;
@@ -4691,39 +4771,114 @@
                 message += `* RETIRADA NA LOJA*%0A`;
                 message += ` R. André Elias Pereira, nº 221%0A`;
             }
-
+            
             message += `* PAGAMENTO:* ${getPaymentMethodName(paymentMethod)}%0A`;
             if (paymentMethod === 'pix') message += `* PIX:* 125.707.164-56 (Myrella Luiza)%0A`;
             if (trocoInfo) message += `${trocoInfo}%0A`;
             message += ` ${new Date().toLocaleString('pt-BR')}%0A`;
-
-            cart = [];
-            updateCartUI();
-            closeCheckoutModal();
-
+            
             const whatsappNumber = "5584996933713";
             const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${message}`;
-
+            
             if (isMobile || isPWA) {
                 window.location.href = whatsappUrl;
             } else {
                 window.open(whatsappUrl, '_blank');
             }
-
-            setTimeout(async () => {
-                try {
-                    const stockResponse = await fetch(`${API_BASE_URL}/api/orders/update-stock`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ items: cartBackup })
-                    });
-                    if (stockResponse.ok) console.log('✅ Estoque atualizado no backend');
-                } catch (err) {
-                    console.warn('⚠️ Erro ao atualizar estoque no backend', err);
-                    localStorage.setItem('pending_stock_update', JSON.stringify({ items: cartBackup, timestamp: Date.now() }));
-                }
-            }, 500);
+            
+            showToast('Pedido finalizado com sucesso!', 'success');
+            
+        } else {
+            throw new Error(result.error || 'Erro ao processar pedido');
         }
+        
+    } catch (error) {
+        console.error('❌ Erro no checkout:', error);
+        showToast(`Erro ao processar pedido: ${error.message}. Tente novamente.`, 'error');
+        
+        // Backup: salvar localmente se o backend falhar
+        const saveLocally = confirm('Erro de conexão. Deseja salvar o pedido localmente e tentar enviar depois?');
+        if (saveLocally) {
+            // Salvar venda pendente no localStorage
+            const pendingSales = JSON.parse(localStorage.getItem('pending_sales') || '[]');
+            pendingSales.push({
+                ...saleData,
+                cartBackup: cartBackup,
+                timestamp: Date.now()
+            });
+            localStorage.setItem('pending_sales', JSON.stringify(pendingSales));
+            
+            // Atualizar estoque localmente mesmo assim
+            for (const item of cart) {
+                const product = products.find(p => p.id === item.id);
+                if (product && product.sabores[item.saborIndex]) {
+                    product.sabores[item.saborIndex].quantity = Math.max(0, product.sabores[item.saborIndex].quantity - item.quantity);
+                }
+            }
+            
+            // Salvar no histórico local
+            await addSaleToHistory(cart, productsOnlyTotal, deliveryType, name, paymentMethod);
+            
+            filterProducts();
+            renderAdminProducts();
+            updateAdminDashboard();
+            
+            // Construir mensagem do WhatsApp usando cartBackup
+            let message = `*NOVO PEDIDO - DONA BROOKIES*%0A%0A`;
+            message += `*ITENS DO PEDIDO:*%0A`;
+            cartBackup.forEach((item, index) => {
+                const itemTotal = (item.price * item.quantity).toFixed(2);
+                message += `${index + 1}. ${item.title}%0A`;
+                message += `   Sabor: ${item.saborName}%0A`;
+                message += `   Quantidade: ${item.quantity} un.%0A`;
+                message += `   Valor: R$ ${itemTotal}%0A%0A`;
+            });
+            
+            let deliveryFeeMessage = '';
+            if (deliveryType === 'entrega') {
+                if (!appliedCoupon) {
+                    deliveryFeeMessage = `%0A*Taxa de entrega:* R$ ${DELIVERY_FEE.toFixed(2)}%0A`;
+                } else {
+                    deliveryFeeMessage = `%0A*Frete:* GRÁTIS (Cupom: ${appliedCoupon.code})%0A`;
+                }
+            }
+            message += deliveryFeeMessage;
+            message += `* TOTAL: R$ ${total.toFixed(2)}*%0A%0A`;
+            message += `* CLIENTE:* ${name}%0A`;
+            
+            if (deliveryType === 'entrega') {
+                message += `* ENTREGA EM CASA*%0A`;
+                message += ` ${addressData.street}, ${addressData.number}%0A`;
+                message += ` ${addressData.neighborhood}%0A`;
+                if (addressData.complement) message += ` ${addressData.complement}%0A`;
+                if (appliedCoupon) message += ` ${appliedCoupon.code} - FRETE GRÁTIS%0A`;
+            } else {
+                message += `* RETIRADA NA LOJA*%0A`;
+                message += ` R. André Elias Pereira, nº 221%0A`;
+            }
+            
+            message += `* PAGAMENTO:* ${getPaymentMethodName(paymentMethod)}%0A`;
+            if (paymentMethod === 'pix') message += `* PIX:* 125.707.164-56 (Myrella Luiza)%0A`;
+            if (trocoInfo) message += `${trocoInfo}%0A`;
+            message += ` ${new Date().toLocaleString('pt-BR')}%0A`;
+            
+            const whatsappNumber = "5584996933713";
+            const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${message}`;
+            
+            if (isMobile || isPWA) {
+                window.location.href = whatsappUrl;
+            } else {
+                window.open(whatsappUrl, '_blank');
+            }
+            
+            cart = [];
+            updateCartUI();
+            closeCheckoutModal();
+            
+            showToast('Pedido salvo localmente. Será sincronizado quando a conexão恢复正常.', 'warning');
+        }
+    }
+}
 
         function getPaymentMethodName(method) {
             switch (method) {
@@ -5674,6 +5829,48 @@
             } catch (error) {
                 console.error('Erro ao excluir cupom:', error);
                 showToast(`Erro ao excluir cupom: ${error.message}`, 'error');
+            }
+        }
+        async function syncPendingSales() {
+            const pendingSales = JSON.parse(localStorage.getItem('pending_sales') || '[]');
+
+            if (pendingSales.length === 0) return;
+
+            console.log(`🔄 Sincronizando ${pendingSales.length} vendas pendentes...`);
+
+            for (let i = 0; i < pendingSales.length; i++) {
+                const sale = pendingSales[i];
+
+                try {
+                    const response = await fetch(`${API_BASE_URL}/api/checkout`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            cart: sale.cartBackup,
+                            stockUpdates: sale.stockUpdates,
+                            saleData: sale
+                        })
+                    });
+
+                    if (response.ok) {
+                        const result = await response.json();
+                        if (result.success) {
+                            console.log(`✅ Venda pendente ${i + 1} sincronizada!`);
+                            pendingSales.splice(i, 1);
+                            i--;
+                        }
+                    }
+                } catch (error) {
+                    console.error(`❌ Erro ao sincronizar venda pendente:`, error);
+                }
+            }
+
+            localStorage.setItem('pending_sales', JSON.stringify(pendingSales));
+
+            if (pendingSales.length === 0) {
+                console.log('✅ Todas as vendas pendentes foram sincronizadas!');
             }
         }
 
