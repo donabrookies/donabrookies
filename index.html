@@ -1065,6 +1065,18 @@
                 touch-action: manipulation;
             }
         }
+        /* CORREÇÃO URGENTE: Fundo branco no mobile */
+html, body {
+    background-color: #ffffff !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+@media (max-width: 768px) {
+    html, body, #store-section, .cart-section {
+        background-color: #ffffff !important;
+    }
+}
 
         @media (max-width: 640px) {
             .dashboard-cards {
@@ -1249,6 +1261,7 @@
             background-color: #fee2e2;
             color: #991b1b;
         }
+
     </style>
 </head>
 
