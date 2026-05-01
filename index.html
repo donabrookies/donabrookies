@@ -3418,88 +3418,162 @@
 
         // ===== FUNÇÃO CORRIGIDA: Renderizar histórico de vendas =====
         function renderSalesHistory() {
-            if (!elements.salesHistoryList) return;
+    if (!elements.salesHistoryList) return;
 
-            let filteredSales = [...salesHistory];
+    let filteredSales = [...salesHistory];
 
-            if (currentDateFilter) {
-                filteredSales = filteredSales.filter(sale => {
-                    const saleDate = sale.date ? sale.date.split(' ')[0] : '';
-                    return saleDate === currentDateFilter;
-                });
+    if (currentDateFilter) {
+        filteredSales = filteredSales.filter(sale => {
+            const saleDate = sale.date ? sale.date.split(' ')[0] : '';
+            return saleDate === currentDateFilter;
+        });
+    }
+
+    // CORREÇÃO: Agrupar por DIA (apenas data, sem hora)
+    const salesByDate = {};
+    
+    filteredSales.forEach(sale => {
+        // Extrair apenas a data (YYYY-MM-DD)
+        let fullDate = sale.date || sale.created_at || '';
+        let dateOnly = fullDate;
+        
+        if (fullDate.includes('T')) {
+            dateOnly = fullDate.split('T')[0];
+        } else if (fullDate.includes(' ')) {
+            dateOnly = fullDate.split(' ')[0];
+        }
+        
+        // Se não conseguiu extrair data, pula
+        if (!dateOnly || dateOnly === '') return;
+        
+        // Formatar para exibição DD/MM/YYYY
+        let displayDate = dateOnly;
+        if (dateOnly.includes('-')) {
+            const parts = dateOnly.split('-');
+            if (parts.length === 3) {
+                displayDate = `${parts[2]}/${parts[1]}/${parts[0]}`;
             }
+        }
+        
+        if (!salesByDate[displayDate]) {
+            salesByDate[displayDate] = {
+                sales: [],
+                totalValue: 0,
+                totalQuantity: 0,
+                rawDate: dateOnly
+            };
+        }
+        salesByDate[displayDate].sales.push(sale);
+        salesByDate[displayDate].totalValue += sale.totalValue || 0;
+        salesByDate[displayDate].totalQuantity += sale.totalQuantity || 0;
+    });
 
-            const periodTotal = filteredSales.reduce((sum, sale) => sum + (sale.totalValue || 0), 0);
-            const periodTotalEl = document.getElementById('period-total');
-            if (periodTotalEl) {
-                periodTotalEl.textContent = `R$ ${periodTotal.toFixed(2).replace('.', ',')}`;
-            }
+    // Ordenar datas (mais recente primeiro)
+    const sortedDates = Object.keys(salesByDate).sort((a, b) => {
+        const dateA = salesByDate[a].rawDate;
+        const dateB = salesByDate[b].rawDate;
+        return new Date(dateB) - new Date(dateA);
+    });
 
-            if (filteredSales.length === 0) {
-                let mensagem = currentDateFilter ?
-                    `Nenhuma venda encontrada para o dia ${currentDateFilter}.` :
-                    'Nenhuma venda registrada ainda.';
+    // Total geral do período
+    const periodTotal = filteredSales.reduce((sum, sale) => sum + (sale.totalValue || 0), 0);
+    const periodTotalEl = document.getElementById('period-total');
+    if (periodTotalEl) {
+        periodTotalEl.textContent = `R$ ${periodTotal.toFixed(2).replace('.', ',')}`;
+    }
 
-                elements.salesHistoryList.innerHTML = `
+    if (sortedDates.length === 0) {
+        let mensagem = currentDateFilter ?
+            `Nenhuma venda encontrada para o dia ${currentDateFilter}.` :
+            'Nenhuma venda registrada ainda.';
+        elements.salesHistoryList.innerHTML = `
             <tr>
                 <td colspan="5" class="py-4 px-4 text-center text-gray-500">
-                    ${mensagem} Total: R$ 0,00
+                    ${mensagem}
                 </td>
             </tr>
         `;
-                return;
-            }
+        return;
+    }
 
-            // LIMPA O CONTEÚDO UMA ÚNICA VEZ
-            elements.salesHistoryList.innerHTML = '';
+    // Limpa a tabela
+    elements.salesHistoryList.innerHTML = '';
 
-            filteredSales.forEach(sale => {
-                const row = document.createElement('tr');
-                const dateTime = sale.created_at ? new Date(sale.created_at).toLocaleString('pt-BR') : sale.date;
+    // Para cada data (UMA PASTA POR DIA)
+    sortedDates.forEach(displayDate => {
+        const group = salesByDate[displayDate];
+        const totalValueFormatted = group.totalValue.toFixed(2).replace('.', ',');
+        const totalQuantity = group.totalQuantity;
+        const totalPedidos = group.sales.length;
 
-                // PEGAR NOME DO CLIENTE
-                const customerName = sale.customerName || sale.customer_name || 'Cliente não informado';
-
-                // PEGAR FORMA DE PAGAMENTO - TRADUZIDA
-                let paymentMethod = sale.paymentMethod || sale.payment_method || 'Não informado';
-                if (paymentMethod === 'pix') paymentMethod = 'PIX';
-                if (paymentMethod === 'card') paymentMethod = 'Cartão';
-                if (paymentMethod === 'cash') paymentMethod = 'Dinheiro';
-
-                const itemsHtml = (sale.items || []).map(item =>
-                    `<span style="display: inline-block; background: #f3f4f6; padding: 0.125rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; margin-right: 0.5rem; margin-bottom: 0.25rem;">
-                ${item.productName} - ${item.saborName} (x${item.quantity})
-            </span>`
-                ).join('');
-
-                row.innerHTML = `
-            <td class="py-3 px-4 text-sm">${dateTime}</td>
-            <td class="py-3 px-4 text-sm font-medium">${customerName}</td>
-            <td class="py-3 px-4 text-sm">${paymentMethod}</td>
-            <td class="py-3 px-4 text-sm"><div style="font-size: 0.875rem; color: #4b5563;">${itemsHtml || 'Sem itens'}</div></td>
-            <td class="py-3 px-4 text-sm font-bold text-green-600">R$ ${(sale.totalValue || 0).toFixed(2).replace('.', ',')}</td>
+        // Linha da "pasta" (data) - UMA ÚNICA POR DIA
+        const folderRow = document.createElement('tr');
+        folderRow.className = 'bg-gray-100 cursor-pointer hover:bg-gray-200';
+        folderRow.style.borderBottom = '2px solid #ddd';
+        folderRow.innerHTML = `
+            <td colspan="5" class="py-3 px-4 font-bold text-left">
+                <i class="fas fa-folder mr-2"></i>
+                📅 ${displayDate}
+                <span class="ml-4 text-sm font-normal text-gray-600">
+                    (${totalPedidos} pedido${totalPedidos !== 1 ? 's' : ''} | 
+                    ${totalQuantity} item${totalQuantity !== 1 ? 's' : ''} | 
+                    Total: R$ ${totalValueFormatted})
+                </span>
+            </td>
         `;
-                elements.salesHistoryList.appendChild(row);
-            });
 
+        // Linhas das vendas (inicialmente ocultas)
+        const salesRows = [];
+        
+        group.sales.forEach((sale, index) => {
+            const dateTime = sale.created_at ? new Date(sale.created_at).toLocaleString('pt-BR') : sale.date;
+            const customerName = sale.customerName || sale.customer_name || 'Cliente não informado';
+            let paymentMethod = sale.paymentMethod || sale.payment_method || 'Não informado';
+            if (paymentMethod === 'pix') paymentMethod = 'PIX';
+            if (paymentMethod === 'card') paymentMethod = 'Cartão';
+            if (paymentMethod === 'cash') paymentMethod = 'Dinheiro';
 
-            filteredSales.forEach(sale => {
-                const row = document.createElement('tr');
-                const dateTime = sale.created_at ? new Date(sale.created_at).toLocaleString('pt-BR') : sale.date;
-                const itemsHtml = (sale.items || []).map(item =>
-                    `<span style="display: inline-block; background: #f3f4f6; padding: 0.125rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; margin-right: 0.5rem; margin-bottom: 0.25rem;">${item.productName} - ${item.saborName} (x${item.quantity})</span>`
-                ).join('');
+            const itemsHtml = (sale.items || []).map(item =>
+                `<span style="display: inline-block; background: #f3f4f6; padding: 0.125rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; margin-right: 0.5rem; margin-bottom: 0.25rem;">
+                    ${item.productName} - ${item.saborName} (x${item.quantity})
+                </span>`
+            ).join('');
 
-                row.innerHTML = `
-                <td class="py-3 px-4 text-sm">${dateTime}</td>
-                <td class="py-3 px-4 text-sm font-medium">${sale.customerName || 'Não informado'}</td>
-                <td class="py-3 px-4 text-sm">${sale.paymentMethod || 'Não informado'}</td>
+            const saleRow = document.createElement('tr');
+            saleRow.className = 'sale-row hidden bg-white';
+            saleRow.setAttribute('data-parent-date', displayDate);
+            saleRow.innerHTML = `
+                <td class="py-3 px-4 text-sm pl-8">${dateTime}</td>
+                <td class="py-3 px-4 text-sm font-medium">${customerName}</td>
+                <td class="py-3 px-4 text-sm">${paymentMethod}</td>
                 <td class="py-3 px-4 text-sm"><div style="font-size: 0.875rem; color: #4b5563;">${itemsHtml || 'Sem itens'}</div></td>
                 <td class="py-3 px-4 text-sm font-bold text-green-600">R$ ${(sale.totalValue || 0).toFixed(2).replace('.', ',')}</td>
             `;
-                elements.salesHistoryList.appendChild(row);
-            });
-        }
+            salesRows.push(saleRow);
+        });
+
+        // Adicionar ao DOM
+        elements.salesHistoryList.appendChild(folderRow);
+        salesRows.forEach(row => elements.salesHistoryList.appendChild(row));
+
+        // Evento de clique para expandir/recolher
+        let isExpanded = false;
+        folderRow.addEventListener('click', () => {
+            if (isExpanded) {
+                salesRows.forEach(row => row.classList.add('hidden'));
+                folderRow.classList.remove('expanded');
+                const icon = folderRow.querySelector('i');
+                if (icon) icon.className = 'fas fa-folder mr-2';
+            } else {
+                salesRows.forEach(row => row.classList.remove('hidden'));
+                folderRow.classList.add('expanded');
+                const icon = folderRow.querySelector('i');
+                if (icon) icon.className = 'fas fa-folder-open mr-2';
+            }
+            isExpanded = !isExpanded;
+        });
+    });
+}
 
         async function addSaleToHistory(cartItems, productsTotal, deliveryType, customerName, paymentMethod) {
             try {
